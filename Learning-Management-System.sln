@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Learning-Management-System", "Learning-Management-System", "{9C4CF1CD-6726-5C36-F096-87D88943527B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Learning-Management-System", "Learning-Management-System\Learning-Management-System\Learning-Management-System.csproj", "{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7} = {9C4CF1CD-6726-5C36-F096-87D88943527B}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {76828B04-DEA3-480F-99AC-714F508CF8DC}
+	EndGlobalSection
+EndGlobal
