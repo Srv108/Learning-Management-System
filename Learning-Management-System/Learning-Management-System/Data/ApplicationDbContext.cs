@@ -1,6 +1,7 @@
 using Learning_Management_System.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.SqlServer;
 
 namespace Learning_Management_System.Data
 {
