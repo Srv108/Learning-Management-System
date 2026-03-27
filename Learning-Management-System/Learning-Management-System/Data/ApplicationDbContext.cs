@@ -13,6 +13,69 @@ namespace Learning_Management_System.Data
         }
 
         // Add future DB sets here
-        // public DbSet<Course> Courses { get; set; }
+        public DbSet<Course> Courses { get; set; }
+        public DbSet<CourseModule> CourseModules { get; set; }
+        public DbSet<Lesson> Lessons { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
+        public DbSet<CourseBatch> CourseBatches { get; set; }
+        public DbSet<SubjectTeacher> SubjectTeachers { get; set; }
+        public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<AttendanceSession> AttendanceSessions { get; set; }
+        public DbSet<AttendanceRecord> AttendanceRecords { get; set; }
+        public DbSet<Assignment> Assignments { get; set; }
+        public DbSet<Submission> Submissions { get; set; }
+        public DbSet<AssignmentGrade> AssignmentGrades { get; set; }
+        public DbSet<Exam> Exams { get; set; }
+        public DbSet<ExamResult> ExamResults { get; set; }
+        public DbSet<StudentCourseProgress> StudentCourseProgress { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+
+            // Enrollment unique constraint
+            builder.Entity<Enrollment>()
+                .HasIndex(e => new { e.StudentId, e.BatchId })
+                .IsUnique();
+
+            // AttendanceRecord unique constraint
+            builder.Entity<AttendanceRecord>()
+                .HasIndex(ar => new { ar.SessionId, ar.StudentId })
+                .IsUnique();
+
+            // Submission unique constraint
+            builder.Entity<Submission>()
+                .HasIndex(s => new { s.AssignmentId, s.StudentId })
+                .IsUnique();
+
+            // ExamResult unique constraint
+            builder.Entity<ExamResult>()
+                .HasIndex(er => new { er.ExamId, er.StudentId })
+                .IsUnique();
+
+            // StudentCourseProgress unique constraint
+            builder.Entity<StudentCourseProgress>()
+                .HasIndex(scp => new { scp.StudentId, scp.CourseId })
+                .IsUnique();
+
+            // Indexes for performance
+            builder.Entity<Enrollment>()
+                .HasIndex(e => e.StudentId);
+
+            builder.Entity<Assignment>()
+                .HasIndex(a => a.SubjectId);
+
+            builder.Entity<Exam>()
+                .HasIndex(e => e.SubjectId);
+
+            builder.Entity<AttendanceSession>()
+                .HasIndex(s => s.SubjectId);
+
+            builder.Entity<ExamResult>()
+                .HasIndex(er => er.ExamId);
+
+            builder.Entity<Submission>()
+                .HasIndex(s => s.AssignmentId);
+        }
     }
 }

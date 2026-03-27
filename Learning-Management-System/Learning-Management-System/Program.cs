@@ -52,6 +52,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<Learning_Management_System.Services.IJwtTokenService, Learning_Management_System.Services.JwtTokenService>();
+builder.Services.AddScoped<Learning_Management_System.Services.DataSeeder>();
 
 // Swagger/OpenAPI
 builder.Services.AddSwaggerGen(options =>
@@ -98,7 +99,7 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Ensure roles exist
+// Ensure roles exist and seed data
 using (var scope = app.Services.CreateScope())
 {
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
@@ -111,6 +112,10 @@ using (var scope = app.Services.CreateScope())
             await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
+
+    // Seed dummy data
+    var seeder = scope.ServiceProvider.GetRequiredService<Learning_Management_System.Services.DataSeeder>();
+    await seeder.SeedDataAsync();
 }
 
 // Configure the HTTP request pipeline.
