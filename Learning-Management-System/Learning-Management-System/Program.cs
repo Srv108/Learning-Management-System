@@ -52,6 +52,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<Learning_Management_System.Services.IJwtTokenService, Learning_Management_System.Services.JwtTokenService>();
+builder.Services.AddScoped<Learning_Management_System.Services.IAssignmentService, Learning_Management_System.Services.AssignmentService>();
 
 // Swagger/OpenAPI
 builder.Services.AddSwaggerGen(options =>
