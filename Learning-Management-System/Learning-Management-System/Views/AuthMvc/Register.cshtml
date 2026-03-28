@@ -1,0 +1,127 @@
+@model Learning_Management_System.Controllers.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Register";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <h2 class="card-title text-center mb-4">Create Account</h2>
+                    <p class="text-center text-muted mb-4">Join the Learning Management System</p>
+
+                    <form method="post" asp-action="Register" asp-controller="AuthMvc">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none" id="validationSummary"></div>
+
+                        <!-- Full Name Field -->
+                        <div class="mb-3">
+                            <label class="form-label" for="FullName">Full Name</label>
+                            <input type="text" class="form-control" id="FullName" asp-for="FullName" placeholder="Enter your full name" required>
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <!-- Email Field -->
+                        <div class="mb-3">
+                            <label class="form-label" for="Email">Email Address</label>
+                            <input type="email" class="form-control" id="Email" asp-for="Email" placeholder="Enter your email" required>
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="mb-3">
+                            <label class="form-label" for="Role">Register As</label>
+                            <select class="form-select" id="Role" asp-for="Role" required>
+                                <option value="Student">Student</option>
+                                <option value="Teacher">Teacher</option>
+                            </select>
+                            <small class="text-muted d-block mt-1">Contact admin to register as Coordinator or Admin</small>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="mb-3">
+                            <label class="form-label" for="Password">Password</label>
+                            <input type="password" class="form-control" id="Password" asp-for="Password" placeholder="Create a strong password" required>
+                            <small class="text-muted d-block mt-1">
+                                Password must be at least 8 characters, contain uppercase, lowercase, and a digit.
+                            </small>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <!-- Confirm Password Field -->
+                        <div class="mb-4">
+                            <label class="form-label" for="ConfirmPassword">Confirm Password</label>
+                            <input type="password" class="form-control" id="ConfirmPassword" asp-for="ConfirmPassword" placeholder="Confirm your password" required>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary w-100 mb-3">Register</button>
+
+                        <!-- Login Link -->
+                        <div class="text-center">
+                            <p class="mb-0">Already have an account? <a href="@Url.Action("Login", "AuthMvc")" class="text-decoration-none">Login here</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Client-side validation
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var password = document.getElementById('Password').value;
+            var confirmPassword = document.getElementById('ConfirmPassword').value;
+
+            if (password !== confirmPassword) {
+                e.preventDefault();
+                alert('Passwords do not match!');
+                return false;
+            }
+
+            // Password strength check
+            var hasUpper = /[A-Z]/.test(password);
+            var hasLower = /[a-z]/.test(password);
+            var hasDigit = /[0-9]/.test(password);
+            var isLongEnough = password.length >= 8;
+
+            if (!hasUpper || !hasLower || !hasDigit || !isLongEnough) {
+                e.preventDefault();
+                alert('Password must contain uppercase, lowercase, digit, and be at least 8 characters!');
+                return false;
+            }
+        });
+    </script>
+}
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+
+    .card-body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+</style>

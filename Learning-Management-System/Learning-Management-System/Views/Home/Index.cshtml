@@ -1,8 +1,113 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
+    var userEmail = ViewBag.UserEmail as string ?? "Guest";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome to the Learning Management System</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <h4 class="alert-heading">👋 Welcome, @userEmail!</h4>
+                <p class="mb-0">
+                    You're now connected to the Learning Management System. Navigate through the menu to access courses, assignments, grades, and more.
+                </p>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📚 My Courses</h5>
+                    <p class="card-text">View all enrolled courses</p>
+                    <a href="#" class="btn btn-primary btn-sm">Go to Courses</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📊 Performance</h5>
+                    <p class="card-text">Check your grades and analytics</p>
+                    <a href="#" class="btn btn-primary btn-sm">View Progress</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body text-center">
+                    <h5 class="card-title">📝 Assignments</h5>
+                    <p class="card-text">Submit and track assignments</p>
+                    <a href="#" class="btn btn-primary btn-sm">View Assignments</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <h3>System Status</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Feature</th>
+                            <th>Status</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>🔐 Authentication</td>
+                            <td><span class="badge bg-success">Active</span></td>
+                            <td>JWT + Cookie-based auth enabled</td>
+                        </tr>
+                        <tr>
+                            <td>📊 Analytics API</td>
+                            <td><span class="badge bg-success">Ready</span></td>
+                            <td>9 power-packed analytics endpoints</td>
+                        </tr>
+                        <tr>
+                            <td>🗄️ Database</td>
+                            <td><span class="badge bg-success">Connected</span></td>
+                            <td>SQL Server integration active</td>
+                        </tr>
+                        <tr>
+                            <td>📚 Seed Data</td>
+                            <td><span class="badge bg-warning">Partial</span></td>
+                            <td>37 users, 6 courses loaded</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 8px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
+    }
+
+    .table {
+        background-color: #fff;
+        border-radius: 8px;
+    }
+
+    .badge {
+        font-size: 0.85em;
+        padding: 0.5em 0.75em;
+    }
+</style>
+

@@ -33,6 +33,53 @@ namespace Learning_Management_System.Data
         {
             base.OnModelCreating(builder);
 
+            // Configure delete behaviors first to avoid cycles with multiple paths
+            // All foreign keys to Course should be NoAction to prevent multiple cascade paths
+            builder.Entity<Subject>()
+                .HasOne(s => s.Course)
+                .WithMany(c => c.Subjects)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<CourseBatch>()
+                .HasOne(cb => cb.Course)
+                .WithMany(c => c.Batches)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<CourseModule>()
+                .HasOne(cm => cm.Course)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<StudentCourseProgress>()
+                .HasOne(scp => scp.Course)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Enrollment>()
+                .HasOne(e => e.Batch)
+                .WithMany(b => b.Enrollments)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Submission>()
+                .HasOne(s => s.Assignment)
+                .WithMany(a => a.Submissions)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<AttendanceRecord>()
+                .HasOne(ar => ar.Session)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<ExamResult>()
+                .HasOne(er => er.Exam)
+                .WithMany()
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<AssignmentGrade>()
+                .HasOne(ag => ag.Submission)
+                .WithOne(s => s.Grade)
+                .OnDelete(DeleteBehavior.NoAction);
+
             // Enrollment unique constraint
             builder.Entity<Enrollment>()
                 .HasIndex(e => new { e.StudentId, e.BatchId })
