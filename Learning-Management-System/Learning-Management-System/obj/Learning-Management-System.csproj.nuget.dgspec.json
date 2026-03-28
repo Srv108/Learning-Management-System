@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\2483478\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj": {}
+    "C:\\Users\\2483423\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj": {}
   },
   "projects": {
-    "C:\\Users\\2483478\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj": {
+    "C:\\Users\\2483423\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\2483478\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj",
+        "projectUniqueName": "C:\\Users\\2483423\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj",
         "projectName": "Learning-Management-System",
-        "projectPath": "C:\\Users\\2483478\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj",
-        "packagesPath": "C:\\Users\\2483478\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\2483478\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\obj\\",
+        "projectPath": "C:\\Users\\2483423\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System.csproj",
+        "packagesPath": "C:\\Users\\2483423\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\2483423\\Learning-Management-System\\Learning-Management-System\\Learning-Management-System\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\2483478\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\2483423\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

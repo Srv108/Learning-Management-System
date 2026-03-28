@@ -26,14 +26,19 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddDefaultTokenProviders();
 
+// Configure cookie authentication for Identity
+builder.Services.AddHttpClient();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
+    options.Cookie.HttpOnly = true;
+});
+
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
 
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    })
+// Simple auth: JWT for API endpoints only
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -113,9 +118,17 @@ using (var scope = app.Services.CreateScope())
         }
     }
 
-    // Seed dummy data
-    var seeder = scope.ServiceProvider.GetRequiredService<Learning_Management_System.Services.DataSeeder>();
-    await seeder.SeedDataAsync();
+    // Seed dummy data - temporarily disabled
+    try
+    {
+        var seeder = scope.ServiceProvider.GetRequiredService<Learning_Management_System.Services.DataSeeder>();
+        await seeder.SeedDataAsync();
+    }
+    catch (Exception ex)
+    {
+        // Log seeding errors but don't fail application startup
+        Console.WriteLine($"Data seeding failed: {ex.Message}");
+    }
 }
 
 // Configure the HTTP request pipeline.
@@ -127,6 +140,7 @@ if (app.Environment.IsDevelopment())
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "Learning Management System API v1");
         options.RoutePrefix = "swagger";
     });
+    app.UseDeveloperExceptionPage();
 }
 else
 {
@@ -136,6 +150,7 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseSession();
 
 app.UseRouting();
 
@@ -150,5 +165,11 @@ app.MapControllerRoute(
     .WithStaticAssets();
 
 app.MapControllers();
+
+// Catch-all route for invalid URLs - redirect to login page
+app.MapFallback(async context =>
+{
+    context.Response.Redirect("/AuthMvc/Login", permanent: false);
+});
 
 app.Run();

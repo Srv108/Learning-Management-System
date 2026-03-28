@@ -1,0 +1,181 @@
+@model Learning_Management_System.Controllers.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card shadow-lg">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="card-title">Welcome Back</h2>
+                        <p class="text-muted">Login to your Learning Management System</p>
+                    </div>
+
+                    <form method="post" asp-action="Login" asp-controller="AuthMvc">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <!-- Email Field -->
+                        <div class="mb-3">
+                            <label class="form-label" for="Email">Email Address</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i> ✉️
+                                </span>
+                                <input type="email" class="form-control" id="Email" asp-for="Email" 
+                                       placeholder="Enter your email" required autofocus>
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="mb-3">
+                            <label class="form-label" for="Password">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    🔐
+                                </span>
+                                <input type="password" class="form-control" id="Password" asp-for="Password" 
+                                       placeholder="Enter your password" required>
+                                <button class="btn btn-outline-secondary" type="button" id="togglePassword" tabindex="-1">
+                                    <span id="toggleIcon">👁️</span>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Remember Me -->
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="RememberMe" asp-for="RememberMe">
+                            <label class="form-check-label" for="RememberMe">
+                                Remember me
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary w-100 mb-3" id="loginBtn">
+                            <span>Sign In</span>
+                        </button>
+
+                        <!-- Divider -->
+                        <div class="text-center mb-3">
+                            <span class="text-muted">Don't have an account?</span>
+                        </div>
+
+                        <!-- Register Link -->
+                        <a href="@Url.Action("Register", "AuthMvc")" class="btn btn-outline-primary w-100">
+                            Create New Account
+                        </a>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="text-center mt-4">
+                <p class="text-muted small">
+                    The Learning Management System v1.0 | 
+                    <a href="#" class="text-decoration-none">Help</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Toggle password visibility
+        document.getElementById('togglePassword').addEventListener('click', function(e) {
+            e.preventDefault();
+            const passwordInput = document.getElementById('Password');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = '🙈';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = '👁️';
+            }
+        });
+
+        // Add loading state to button and debug form submission
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const email = document.getElementById('Email').value;
+            const password = document.getElementById('Password').value;
+            
+            console.log('=== FORM SUBMISSION ===');
+            console.log('Email:', email);
+            console.log('Password:', password);
+            console.log('Form Action:', this.action);
+            console.log('Form Method:', this.method);
+            
+            const btn = document.getElementById('loginBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Signing in...';
+            btn.disabled = true;
+            
+            console.log('Button disabled, showing loading state');
+        });
+    </script>
+}
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .card-body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .input-group-text {
+        background-color: #fff;
+        border-right: none;
+    }
+
+    .form-control {
+        border-left: none;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: transform 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        transform: translateY(-2px);
+    }
+
+    .btn-outline-primary {
+        border-color: #667eea;
+        color: #667eea;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #667eea;
+        border-color: #667eea;
+    }
+
+    .btn-outline-secondary {
+        border-color: #ddd;
+    }
+
+    .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        border-color: #ddd;
+    }
+</style>

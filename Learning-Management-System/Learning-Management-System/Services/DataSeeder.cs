@@ -48,12 +48,14 @@ namespace Learning_Management_System.Services
                 }
             }
 
-            // Create Teachers
+            // Create Teachers (5 instead of 3)
             var teachers = new[]
             {
-                new { Username = "teacher1", Email = "teacher1@lms.com", Name = "Prof. John Smith", Role = "Teacher" },
-                new { Username = "teacher2", Email = "teacher2@lms.com", Name = "Prof. Sarah Johnson", Role = "Teacher" },
-                new { Username = "teacher3", Email = "teacher3@lms.com", Name = "Prof. Mike Davis", Role = "Teacher" }
+                new { Username = "teacher1", Email = "teacher1@lms.com", Name = "Prof. John Smith" },
+                new { Username = "teacher2", Email = "teacher2@lms.com", Name = "Prof. Sarah Johnson" },
+                new { Username = "teacher3", Email = "teacher3@lms.com", Name = "Prof. Mike Davis" },
+                new { Username = "teacher4", Email = "teacher4@lms.com", Name = "Prof. Emily Brown" },
+                new { Username = "teacher5", Email = "teacher5@lms.com", Name = "Prof. James Wilson" }
             };
 
             foreach (var teacher in teachers)
@@ -66,32 +68,28 @@ namespace Learning_Management_System.Services
                         UserName = teacher.Username,
                         Email = teacher.Email,
                         FullName = teacher.Name,
-                        PhoneNumber = "123456789"
+                        PhoneNumber = $"100{teachers.ToList().IndexOf(teacher):D7}"
                     };
                     await _userManager.CreateAsync(user, "Password@123");
-                    await _userManager.AddToRoleAsync(user, teacher.Role);
+                    await _userManager.AddToRoleAsync(user, "Teacher");
                 }
             }
 
-            // Create Students
-            var students = new[]
+            // Create 30 Students (instead of 10)
+            var studentCount = 30;
+            for (int i = 1; i <= studentCount; i++)
             {
-                "student1", "student2", "student3", "student4", "student5",
-                "student6", "student7", "student8", "student9", "student10"
-            };
-
-            for (int i = 0; i < students.Length; i++)
-            {
-                var email = $"{students[i]}@lms.com";
+                var username = $"student{i}";
+                var email = $"{username}@lms.com";
                 var user = await _userManager.FindByEmailAsync(email);
                 if (user == null)
                 {
                     user = new AppUser
                     {
-                        UserName = students[i],
+                        UserName = username,
                         Email = email,
-                        FullName = $"Student {i + 1}",
-                        PhoneNumber = $"987654{i:D3}"
+                        FullName = $"Student {i}",
+                        PhoneNumber = $"200{i:D7}"
                     };
                     await _userManager.CreateAsync(user, "Password@123");
                     await _userManager.AddToRoleAsync(user, "Student");
@@ -148,18 +146,26 @@ namespace Learning_Management_System.Services
 
         private async Task SeedCoursesAndSubjects()
         {
-            var teacher1 = await _userManager.FindByEmailAsync("teacher1@lms.com");
-            var teacher2 = await _userManager.FindByEmailAsync("teacher2@lms.com");
-            var teacher3 = await _userManager.FindByEmailAsync("teacher3@lms.com");
+            var teachers = new[] { "teacher1@lms.com", "teacher2@lms.com", "teacher3@lms.com", "teacher4@lms.com", "teacher5@lms.com" };
+            var teacherObjects = new List<AppUser>();
+            foreach (var email in teachers)
+            {
+                var teacher = await _userManager.FindByEmailAsync(email);
+                if (teacher != null) teacherObjects.Add(teacher);
+            }
 
-            // Create Courses
+            // Create 6 Courses
             var courses = new[]
             {
-                new { Title = "Mathematics", Description = "Advanced Mathematics Course", Credits = 4 },
-                new { Title = "Computer Science", Description = "Introduction to Computer Science", Credits = 3 },
-                new { Title = "Physics", Description = "Fundamental Physics Concepts", Credits = 4 }
+                new { Title = "Mathematics", Description = "Advanced Mathematics Course", Credits = 4, Teacher = 0 },
+                new { Title = "Computer Science", Description = "Introduction to Computer Science", Credits = 3, Teacher = 1 },
+                new { Title = "Physics", Description = "Fundamental Physics Concepts", Credits = 4, Teacher = 2 },
+                new { Title = "Chemistry", Description = "Organic and Inorganic Chemistry", Credits = 3, Teacher = 3 },
+                new { Title = "English Literature", Description = "Classic and Modern Literature", Credits = 3, Teacher = 4 },
+                new { Title = "Biology", Description = "Life Sciences and Ecology", Credits = 4, Teacher = 0 }
             };
 
+            int courseIndex = 0;
             foreach (var courseData in courses)
             {
                 var course = new Course
@@ -167,7 +173,7 @@ namespace Learning_Management_System.Services
                     Title = courseData.Title,
                     Description = courseData.Description,
                     Credits = courseData.Credits,
-                    CreatedById = teacher1!.Id,
+                    CreatedById = teacherObjects[courseData.Teacher].Id,
                     Status = "ACTIVE",
                     CreatedAt = DateTime.UtcNow
                 };
@@ -177,19 +183,16 @@ namespace Learning_Management_System.Services
                 // Create Subjects for each course
                 var subjects = courseData.Title switch
                 {
-                    "Mathematics" => new[] { "Calculus", "Linear Algebra", "Discrete Math" },
-                    "Computer Science" => new[] { "Programming", "Algorithms", "Data Structures" },
-                    "Physics" => new[] { "Mechanics", "Thermodynamics", "Waves" },
+                    "Mathematics" => new[] { "Calculus I", "Calculus II", "Linear Algebra", "Discrete Mathematics" },
+                    "Computer Science" => new[] { "Programming Basics", "Object-Oriented Programming", "Algorithms", "Data Structures", "Database Systems" },
+                    "Physics" => new[] { "Classical Mechanics", "Thermodynamics", "Waves and Oscillations", "Electromagnetism" },
+                    "Chemistry" => new[] { "Organic Chemistry", "Inorganic Chemistry", "Physical Chemistry", "Analytical Chemistry" },
+                    "English Literature" => new[] { "Shakespeare Studies", "Modern Poetry", "Victorian Novel", "Contemporary Drama" },
+                    "Biology" => new[] { "Cell Biology", "Genetics", "Ecology", "Molecular Biology", "Evolutionary Biology" },
                     _ => new string[] { }
                 };
 
-                var subjectTeacher = courseData.Title switch
-                {
-                    "Mathematics" => teacher1,
-                    "Computer Science" => teacher2,
-                    "Physics" => teacher3,
-                    _ => teacher1
-                };
+                var subjectTeacher = teacherObjects[courseData.Teacher];
 
                 foreach (var subjectName in subjects)
                 {
@@ -207,11 +210,45 @@ namespace Learning_Management_System.Services
                     var subjectTeacherMap = new SubjectTeacher
                     {
                         SubjectId = subject.Id,
-                        TeacherId = subjectTeacher!.Id,
+                        TeacherId = subjectTeacher.Id,
                         CreatedAt = DateTime.UtcNow
                     };
                     _context.SubjectTeachers.Add(subjectTeacherMap);
+
+                    // Create Course Modules
+                    var moduleCount = 3;
+                    for (int m = 1; m <= moduleCount; m++)
+                    {
+                        var module = new CourseModule
+                        {
+                            CourseId = course.Id,
+                            Title = $"{subjectName} - Module {m}",
+                            Description = $"Module {m} content for {subjectName}",
+                            OrderIndex = m,
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.CourseModules.Add(module);
+                        await _context.SaveChangesAsync();
+
+                        // Create Lessons for each module
+                        for (int l = 1; l <= 3; l++)
+                        {
+                            var lesson = new Lesson
+                            {
+                                ModuleId = module.Id,
+                                Title = $"{subjectName} - Lesson {m}.{l}",
+                                Description = $"Learning content for lesson {m}.{l}",
+                                ContentUrl = $"content/lesson_{module.Id}_{l}.mp4",
+                                Duration = 45 + (l * 10),
+                                OrderIndex = l,
+                                CreatedAt = DateTime.UtcNow
+                            };
+                            _context.Lessons.Add(lesson);
+                        }
+                    }
                 }
+
+                courseIndex++;
             }
 
             await _context.SaveChangesAsync();
@@ -221,34 +258,40 @@ namespace Learning_Management_System.Services
         {
             var courses = await _context.Courses.ToListAsync();
             var students = await _userManager.GetUsersInRoleAsync("Student");
+            var studentList = students.ToList();
 
             foreach (var course in courses)
             {
-                // Create batch
-                var batch = new CourseBatch
+                for (int batchNum = 1; batchNum <= 2; batchNum++) // 2 batches per course
                 {
-                    CourseId = course.Id,
-                    BatchName = $"{course.Title} - Spring 2026",
-                    StartDate = DateTime.Now,
-                    EndDate = DateTime.Now.AddMonths(4),
-                    CreatedAt = DateTime.UtcNow
-                };
-                _context.CourseBatches.Add(batch);
-                await _context.SaveChangesAsync();
-
-                // Enroll 8 random students in each batch
-                var enrolledStudents = students.OrderBy(x => Guid.NewGuid()).Take(8).ToList();
-                foreach (var student in enrolledStudents)
-                {
-                    var enrollment = new Enrollment
+                    var batch = new CourseBatch
                     {
-                        StudentId = student.Id,
-                        BatchId = batch.Id,
-                        EnrolledAt = DateTime.UtcNow,
-                        Status = "ACTIVE",
+                        CourseId = course.Id,
+                        BatchName = $"{course.Title} - Batch {batchNum} (Spring 2026)",
+                        StartDate = DateTime.Now.AddDays(-batchNum * 30),
+                        EndDate = DateTime.Now.AddMonths(4).AddDays(-batchNum * 30),
                         CreatedAt = DateTime.UtcNow
                     };
-                    _context.Enrollments.Add(enrollment);
+                    _context.CourseBatches.Add(batch);
+                    await _context.SaveChangesAsync();
+
+                    // Enroll 15 students per batch (distributed from the 30 students)
+                    var startIndex = (int)(((course.Id - 1) * 5 + batchNum * 7) % studentList.Count);
+                    for (int i = 0; i < 15; i++)
+                    {
+                        var studentIndex = (startIndex + i) % studentList.Count;
+                        var student = studentList[studentIndex];
+
+                        var enrollment = new Enrollment
+                        {
+                            StudentId = student.Id,
+                            BatchId = batch.Id,
+                            EnrolledAt = DateTime.UtcNow.AddDays(-Random.Shared.Next(1, 60)),
+                            Status = "ACTIVE",
+                            CreatedAt = DateTime.UtcNow
+                        };
+                        _context.Enrollments.Add(enrollment);
+                    }
                 }
             }
 
@@ -258,28 +301,38 @@ namespace Learning_Management_System.Services
         private async Task SeedAttendance()
         {
             var subjects = await _context.Subjects.ToListAsync();
+            var sessions = await _context.AttendanceSessions.ToListAsync();
             var enrollments = await _context.Enrollments.Include(e => e.Batch).ThenInclude(b => b.Course).ToListAsync();
 
             foreach (var subject in subjects)
             {
-                // Create 10 attendance sessions
-                for (int i = 0; i < 10; i++)
+                // Create 15 attendance sessions per subject
+                for (int i = 0; i < 15; i++)
                 {
                     var session = new AttendanceSession
                     {
                         SubjectId = subject.Id,
                         SessionDate = DateTime.Now.AddDays(-i),
+                        CreatedById = (await _userManager.FindByEmailAsync("teacher1@lms.com"))!.Id,
                         CreatedAt = DateTime.UtcNow
                     };
                     _context.AttendanceSessions.Add(session);
                     await _context.SaveChangesAsync();
 
                     // Add attendance records for enrolled students
-                    var subjectEnrollments = enrollments.Where(e => e.Batch.Course.Id == subject.CourseId).ToList();
-                    foreach (var enrollment in subjectEnrollments)
+                    var subjectEnrollments = enrollments.Where(e => e.Batch.Course.Subjects.Any(s => s.Id == subject.Id)).ToList();
+                    if (subjectEnrollments.Count == 0)
                     {
-                        var random = new Random();
-                        var isPresent = random.Next(0, 100) > 20; // 80% attendance rate
+                        // Fallback: get enrollments from same course
+                        subjectEnrollments = enrollments.Where(e => e.Batch.Course.Id == subject.CourseId).ToList();
+                    }
+
+                    // Deduplicate enrollments by StudentId to avoid duplicate attendance records
+                    var uniqueEnrollments = subjectEnrollments.GroupBy(e => e.StudentId).Select(g => g.First()).ToList();
+                    
+                    foreach (var enrollment in uniqueEnrollments)
+                    {
+                        var isPresent = Random.Shared.Next(0, 100) > 20; // 80% attendance rate
 
                         var record = new AttendanceRecord
                         {
@@ -290,43 +343,49 @@ namespace Learning_Management_System.Services
                         };
                         _context.AttendanceRecords.Add(record);
                     }
+                    
+                    await _context.SaveChangesAsync();
                 }
             }
-
-            await _context.SaveChangesAsync();
         }
 
         private async Task SeedAssignments()
         {
             var subjects = await _context.Subjects.ToListAsync();
             var enrollments = await _context.Enrollments.Include(e => e.Batch).ThenInclude(b => b.Course).ToListAsync();
-            var teacher1 = await _userManager.FindByEmailAsync("teacher1@lms.com");
+            var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
+            var teacherList = teachers.ToList();
 
             foreach (var subject in subjects)
             {
-                // Create 3 assignments per subject
-                for (int i = 1; i <= 3; i++)
+                var subjectTeacher = teacherList[(int)((subject.Id - 1) % teacherList.Count)];
+
+                // Create 5 assignments per subject
+                for (int i = 1; i <= 5; i++)
                 {
                     var assignment = new Assignment
                     {
                         SubjectId = subject.Id,
                         Title = $"{subject.Name} Assignment {i}",
-                        Description = $"Complete the tasks for assignment {i}",
+                        Description = $"Complete all tasks for assignment {i}. Topics covered: Basic concepts, Applications, Problem solving",
                         MaxScore = 100,
                         DueDate = DateTime.Now.AddDays(7 * i),
-                        CreatedById = teacher1!.Id,
+                        CreatedById = subjectTeacher.Id,
                         CreatedAt = DateTime.UtcNow
                     };
                     _context.Assignments.Add(assignment);
                     await _context.SaveChangesAsync();
 
-                    // Create submissions for enrolled students
-                    var subjectEnrollments = enrollments.Where(e => e.Batch.Course.Id == subject.CourseId).ToList();
+                    // Create submissions for enrolled students (deduplicate by StudentId)
+                    var subjectEnrollments = enrollments.Where(e => e.Batch.Course.Id == subject.CourseId)
+                        .GroupBy(e => e.StudentId)
+                        .Select(g => g.First())
+                        .ToList();
+                    
                     foreach (var enrollment in subjectEnrollments)
                     {
-                        var random = new Random();
-                        var isSubmitted = random.Next(0, 100) > 15; // 85% submission rate
-                        var isLate = random.Next(0, 100) > 80; // 20% late submission rate
+                        var isSubmitted = Random.Shared.Next(0, 100) > 15; // 85% submission rate
+                        var isLate = Random.Shared.Next(0, 100) > 80; // 20% late submission rate
 
                         if (isSubmitted)
                         {
@@ -343,13 +402,14 @@ namespace Learning_Management_System.Services
                             await _context.SaveChangesAsync();
 
                             // Create grade if submitted
+                            var score = Random.Shared.Next(60, 100);
                             var grade = new AssignmentGrade
                             {
                                 SubmissionId = submission.Id,
-                                Score = random.Next(60, 100),
-                                Feedback = $"Good work on assignment {i}",
-                                GradedById = teacher1.Id,
-                                GradedAt = DateTime.UtcNow,
+                                Score = score,
+                                Feedback = score >= 80 ? "Excellent work!" : score >= 70 ? "Good effort, needs improvement" : "Needs more work",
+                                GradedById = subjectTeacher.Id,
+                                GradedAt = DateTime.UtcNow.AddDays(Random.Shared.Next(1, 5)),
                                 CreatedAt = DateTime.UtcNow
                             };
                             _context.AssignmentGrades.Add(grade);
@@ -365,33 +425,50 @@ namespace Learning_Management_System.Services
         {
             var subjects = await _context.Subjects.ToListAsync();
             var enrollments = await _context.Enrollments.Include(e => e.Batch).ThenInclude(b => b.Course).ToListAsync();
-            var teacher1 = await _userManager.FindByEmailAsync("teacher1@lms.com");
+            var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
+            var teacherList = teachers.ToList();
 
             foreach (var subject in subjects)
             {
-                // Create 2 exams per subject (Midterm and Final)
-                var examTypes = new[] { "MIDTERM", "FINAL" };
+                var subjectTeacher = teacherList[(int)((subject.Id - 1) % teacherList.Count)];
+
+                // Create 3 exams per subject (Quiz, Midterm, Final)
+                var examTypes = new[] { "QUIZ", "MIDTERM", "FINAL" };
+                int dayOffset = 0;
                 foreach (var examType in examTypes)
                 {
                     var exam = new Exam
                     {
                         SubjectId = subject.Id,
-                        Title = $"{subject.Name} {examType} Exam",
+                        Title = $"{subject.Name} {examType}",
                         ExamType = examType,
-                        ExamDate = examType == "MIDTERM" ? DateTime.Now.AddDays(30) : DateTime.Now.AddDays(90),
-                        MaxScore = 100,
-                        CreatedById = teacher1!.Id,
+                        ExamDate = examType switch
+                        {
+                            "QUIZ" => DateTime.Now.AddDays(15 + dayOffset),
+                            "MIDTERM" => DateTime.Now.AddDays(30 + dayOffset),
+                            "FINAL" => DateTime.Now.AddDays(90 + dayOffset),
+                            _ => DateTime.Now.AddDays(dayOffset)
+                        },
+                        MaxScore = examType == "QUIZ" ? 50 : 100,
+                        CreatedById = subjectTeacher.Id,
                         CreatedAt = DateTime.UtcNow
                     };
                     _context.Exams.Add(exam);
                     await _context.SaveChangesAsync();
 
-                    // Create exam results for students
-                    var subjectEnrollments = enrollments.Where(e => e.Batch.Course.Id == subject.CourseId).ToList();
+                    dayOffset += 5;
+
+                    // Create exam results for students (deduplicate by StudentId)
+                    var subjectEnrollments = enrollments.Where(e => e.Batch.Course.Id == subject.CourseId)
+                        .GroupBy(e => e.StudentId)
+                        .Select(g => g.First())
+                        .ToList();
+                    
                     foreach (var enrollment in subjectEnrollments)
                     {
-                        var random = new Random();
-                        var marks = random.Next(40, 100);
+                        var marks = Random.Shared.Next(40, 100);
+                        var maxMarks = examType == "QUIZ" ? 50 : 100;
+                        var scaledMarks = (marks * maxMarks) / 100;
 
                         var grade = marks switch
                         {
@@ -407,8 +484,9 @@ namespace Learning_Management_System.Services
                         {
                             ExamId = exam.Id,
                             StudentId = enrollment.StudentId,
-                            Marks = marks,
+                            Marks = scaledMarks,
                             Grade = grade,
+                            GradedById = subjectTeacher.Id,
                             CreatedAt = DateTime.UtcNow
                         };
                         _context.ExamResults.Add(result);
@@ -422,22 +500,37 @@ namespace Learning_Management_System.Services
         private async Task SeedProgress()
         {
             var courses = await _context.Courses.ToListAsync();
-            var enrollments = await _context.Enrollments.ToListAsync();
-            var random = new Random();
+            var enrollments = await _context.Enrollments.Include(e => e.Batch).ToListAsync();
 
             foreach (var enrollment in enrollments)
             {
                 var course = courses.FirstOrDefault(c => c.Id == enrollment.Batch.CourseId);
                 if (course != null)
                 {
+                    var attendancePercentage = Random.Shared.Next(20, 100);
+                    var assignmentScore = Random.Shared.Next(50, 95);
+                    var examScore = Random.Shared.Next(50, 95);
+
+                    // Calculate overall grade based on weighted average
+                    var overallScore = (attendancePercentage * 0.2) + (assignmentScore * 0.3) + (examScore * 0.5);
+                    var overallGrade = overallScore switch
+                    {
+                        >= 90 => "A+",
+                        >= 80 => "A",
+                        >= 70 => "B",
+                        >= 60 => "C",
+                        >= 50 => "D",
+                        _ => "F"
+                    };
+
                     var progress = new StudentCourseProgress
                     {
                         StudentId = enrollment.StudentId,
                         CourseId = course.Id,
-                        AttendancePercentage = random.Next(20, 100),
-                        AssignmentAvgScore = random.Next(50, 95),
-                        ExamAvgScore = random.Next(50, 95),
-                        OverallGrade = new[] { "A+", "A", "B", "C", "D", "F" }[random.Next(0, 6)],
+                        AttendancePercentage = new decimal(attendancePercentage),
+                        AssignmentAvgScore = new decimal(assignmentScore),
+                        ExamAvgScore = new decimal(examScore),
+                        OverallGrade = overallGrade,
                         LastUpdated = DateTime.UtcNow,
                         CreatedAt = DateTime.UtcNow
                     };
