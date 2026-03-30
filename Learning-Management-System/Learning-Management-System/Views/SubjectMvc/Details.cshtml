@@ -1,0 +1,78 @@
+@model SubjectDto
+
+@{
+    ViewData["Title"] = Model?.Name ?? "Subject";
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>@Model?.Name</h2>
+            <p class="text-muted">
+                <a href="@Url.Action("Index", "SubjectMvc")">← Back to Subjects</a>
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="@Url.Action("Index", "AssignmentMvc", new { subjectId = Model?.Id })" class="btn btn-primary">
+                <i class="bi bi-clipboard-check"></i> View Assignments
+            </a>
+        </div>
+    </div>
+
+    @if (Model == null)
+    {
+        <div class="alert alert-danger">Subject not found.</div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Subject Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Course</h6>
+                        <p>@Model.CourseName</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Subject Name</h6>
+                        <p>@Model.Name</p>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <h6>Description</h6>
+                        <p>@(string.IsNullOrEmpty(Model.Description) ? "No description provided." : Model.Description)</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Subject ID</h6>
+                        <p><code>@Model.Id</code></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Course ID</h6>
+                        <p><code>@Model.CourseId</code></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Quick Links</h5>
+            </div>
+            <div class="card-body">
+                <a href="@Url.Action("Index", "AssignmentMvc", new { subjectId = Model.Id })" class="btn btn-outline-primary">
+                    <i class="bi bi-clipboard-check"></i> Assignments
+                </a>
+                <a href="@Url.Action("Index", "SubjectMvc")" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Subjects
+                </a>
+            </div>
+        </div>
+    }
+</div>

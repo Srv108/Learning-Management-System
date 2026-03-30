@@ -3,7 +3,7 @@ using Learning_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Learning_Management_System.Controllers
+namespace Learning_Management_System.Actions
 {
     public class HomeController : Controller
     {

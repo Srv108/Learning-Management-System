@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Text.Json;
 
-namespace Learning_Management_System.Controllers
+namespace Learning_Management_System.Actions
 {
     public class AuthMvcController : Controller
     {

@@ -1,0 +1,64 @@
+@model CreateAssignmentDto
+
+@{
+    ViewData["Title"] = "Create Assignment";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="mb-4">Create New Assignment</h2>
+
+            <form method="post" class="needs-validation">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="Title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" 
+                                   id="Title" asp-for="Title" placeholder="Enter assignment title" required>
+                            <span asp-validation-for="Title" class="invalid-feedback"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Description" class="form-label">Description</label>
+                            <textarea class="form-control" id="Description" asp-for="Description" 
+                                      rows="4" placeholder="Enter assignment description"></textarea>
+                            <small class="form-text text-muted">Markdown supported</small>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="MaxScore" class="form-label">Max Score *</label>
+                                <input type="number" class="form-control" 
+                                       id="MaxScore" asp-for="MaxScore" placeholder="100" min="1" max="1000" required>
+                                <span asp-validation-for="MaxScore" class="invalid-feedback"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="DueDate" class="form-label">Due Date *</label>
+                                <input type="datetime-local" class="form-control" 
+                                       id="DueDate" asp-for="DueDate" required>
+                                <span asp-validation-for="DueDate" class="invalid-feedback"></span>
+                            </div>
+                        </div>
+
+                        <input type="hidden" asp-for="SubjectId" value="@ViewBag.SubjectId">
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Assignment
+                        </button>
+                        <a href="@Url.Action("Index", new { subjectId = Model.SubjectId })" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

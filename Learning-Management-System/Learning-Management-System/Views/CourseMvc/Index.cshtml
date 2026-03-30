@@ -1,0 +1,100 @@
+@{
+    ViewData["Title"] = "Courses";
+}
+
+<div class="container mt-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>
+                <i class="fas fa-book-open"></i> Available Courses
+            </h2>
+            <p class="text-muted">Browse and view details about available courses</p>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="row">
+            @foreach (var course in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 course-card">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">@course.CourseName</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <strong>Code:</strong> @course.CourseCode
+                            </p>
+                            <p class="card-text">
+                                <strong>Duration:</strong> @course.CourseDuration hours
+                            </p>
+                            <p class="card-text text-muted">
+                                @if (!string.IsNullOrEmpty(course.Description))
+                                {
+                                    @course.Description
+                                }
+                                else
+                                {
+                                    <em>No description available</em>
+                                }
+                            </p>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <span class="badge bg-success">
+                                @if (course.IsActive)
+                                {
+                                    <span>Active</span>
+                                }
+                                else
+                                {
+                                    <span>Inactive</span>
+                                }
+                            </span>
+                        </div>
+                        <div class="card-body card-footer-action">
+                            <a href="@Url.Action("Details", "CourseMvc", new { id = course.CourseId })" class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle"></i> No courses available at this time.
+        </div>
+    }
+
+    <div class="mt-4">
+        <a href="@Url.Action("Index", "Home")" class="btn btn-secondary">
+            <i class="fas fa-home"></i> Back to Home
+        </a>
+    </div>
+</div>
+
+<style>
+    .course-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .course-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+        border-bottom: 2px solid #0d6efd;
+    }
+    
+    .card-footer-action {
+        border-top: 1px solid #dee2e6;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+</style>

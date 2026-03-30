@@ -1,0 +1,64 @@
+@model List<SubjectDto>
+
+@{
+    ViewData["Title"] = "Subjects";
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>📚 Subjects</h2>
+            <p class="text-muted">Select a subject to view assignments and materials</p>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (Model == null || Model.Count == 0)
+    {
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No subjects available.
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var subject in Model)
+            {
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">@subject.Name</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">@(string.IsNullOrEmpty(subject.Description) ? "No description" : subject.Description)</p>
+                            <small class="text-muted">Course: @subject.CourseName</small>
+                        </div>
+                        <div class="card-footer bg-light">
+                            <a href="@Url.Action("Index", "AssignmentMvc", new { subjectId = subject.Id })" class="btn btn-info btn-sm">
+                                <i class="bi bi-clipboard-check"></i> View Assignments
+                            </a>
+                            <a href="@Url.Action("Details", "SubjectMvc", new { id = subject.Id })" class="btn btn-secondary btn-sm">
+                                <i class="bi bi-eye"></i> Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

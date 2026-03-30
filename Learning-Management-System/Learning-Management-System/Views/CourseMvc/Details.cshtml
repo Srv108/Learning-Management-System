@@ -1,0 +1,134 @@
+@{
+    ViewData["Title"] = "Course Details";
+}
+
+<div class="container mt-5">
+    @if (Model != null)
+    {
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0">@Model.CourseName</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h5>Course Code</h5>
+                                <p class="form-control-plaintext">@Model.CourseCode</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Duration</h5>
+                                <p class="form-control-plaintext">@Model.CourseDuration hours</p>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>Description</h5>
+                            <p class="form-control-plaintext">
+                                @if (!string.IsNullOrEmpty(Model.Description))
+                                {
+                                    @Model.Description
+                                }
+                                else
+                                {
+                                    <em>No description available</em>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <h5>Status</h5>
+                            <div>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">Inactive</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0">Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <a href="@Url.Action("Index", "Subject")" class="btn btn-primary mb-2">
+                            <i class="fas fa-book"></i> View Subjects in This Course
+                        </a>
+                        <a href="@Url.Action("Index", "Assignment")" class="btn btn-info mb-2">
+                            <i class="fas fa-tasks"></i> View Assignments
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Course Information</h5>
+                    </div>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <strong>ID:</strong> @Model.CourseId
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Status:</strong> 
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success">Available</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Unavailable</span>
+                            }
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Last Updated:</strong> @Model.UpdatedAt.ToString("MMM dd, yyyy")
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <a href="@Url.Action("Index", "CourseMvc")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Courses
+            </a>
+            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary">
+                <i class="fas fa-home"></i> Home
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger" role="alert">
+            <strong>Error:</strong> Course not found.
+        </div>
+        <a href="@Url.Action("Index", "CourseMvc")" class="btn btn-secondary">
+            Back to Courses
+        </a>
+    }
+</div>
+
+<style>
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        margin-bottom: 1.5rem;
+    }
+    
+    .card-header {
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-control-plaintext {
+        font-size: 1rem;
+        color: #212529;
+    }
+</style>

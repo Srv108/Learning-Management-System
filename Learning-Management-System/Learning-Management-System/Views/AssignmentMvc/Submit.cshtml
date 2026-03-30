@@ -1,0 +1,87 @@
+@model CreateSubmissionDto
+
+@{
+    ViewData["Title"] = "Submit Assignment";
+    var assignment = (AssignmentDto)ViewBag.Assignment;
+    var isOverdue = assignment.DueDate < DateTime.UtcNow;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="mb-2">Submit Assignment</h2>
+            <p class="text-muted">@assignment.Title</p>
+
+            @if (isOverdue)
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This assignment is overdue! Submissions may be marked as late.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <form method="post" enctype="multipart/form-data" class="needs-validation">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Assignment Details</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6>Max Score</h6>
+                                <p class="fs-5">@assignment.MaxScore points</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Due Date</h6>
+                                <p class="fs-5">@assignment.DueDate.ToString("MMM dd, yyyy HH:mm")</p>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h6>Description</h6>
+                                <p>@(string.IsNullOrEmpty(assignment.Description) ? "No description provided." : assignment.Description)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Submit Your Assignment</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="FileUrl" class="form-label">File URL or Link *</label>
+                            <input type="text" class="form-control" 
+                                   id="FileUrl" asp-for="FileUrl" 
+                                   placeholder="Paste your file URL or link (e.g., Google Drive, OneDrive, GitHub)"
+                                   required>
+                            <small class="form-text text-muted">
+                                Enter a shareable URL/link to your submission. 
+                                You can use cloud storage links (Google Drive, OneDrive) or GitHub links.
+                            </small>
+                            <span asp-validation-for="FileUrl" class="invalid-feedback"></span>
+                        </div>
+
+                        <input type="hidden" asp-for="AssignmentId" value="@assignment.Id">
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Submit Assignment
+                        </button>
+                        <a href="@Url.Action("Details", new { id = assignment.Id })" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

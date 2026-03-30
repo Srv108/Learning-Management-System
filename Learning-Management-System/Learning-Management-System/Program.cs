@@ -166,10 +166,20 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
-// Catch-all route for invalid URLs - redirect to login page
+// Catch-all route for invalid URLs - redirect to home page if authenticated, otherwise to login
 app.MapFallback(async context =>
 {
-    context.Response.Redirect("/AuthMvc/Login", permanent: false);
+    var userEmail = context.Session.GetString("UserEmail");
+    if (!string.IsNullOrEmpty(userEmail))
+    {
+        // User is authenticated via session, redirect to home
+        context.Response.Redirect("/Home/Index", permanent: false);
+    }
+    else
+    {
+        // Not authenticated, redirect to login
+        context.Response.Redirect("/AuthMvc/Login", permanent: false);
+    }
 });
 
 app.Run();

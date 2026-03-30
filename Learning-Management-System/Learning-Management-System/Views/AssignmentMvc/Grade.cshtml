@@ -1,0 +1,105 @@
+@model CreateAssignmentGradeDto
+
+@{
+    ViewData["Title"] = "Grade Submission";
+    var submission = (SubmissionDto)ViewBag.Submission;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2 class="mb-2">Grade Submission</h2>
+            <p class="text-muted">@submission.AssignmentTitle</p>
+
+            <form method="post" class="needs-validation">
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">Student Submission</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6>Student Name</h6>
+                                <p>@submission.StudentName</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Email</h6>
+                                <p><small>@submission.StudentEmail</small></p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <h6>Submission Status</h6>
+                                <p>
+                                    @if (submission.Status == "LATE")
+                                    {
+                                        <span class="badge bg-warning">Late Submission</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@submission.Status</span>
+                                    }
+                                </p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Submitted At</h6>
+                                <p>@submission.SubmittedAt.ToString("MMM dd, yyyy HH:mm")</p>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(submission.FileUrl))
+                        {
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <h6>Submission File</h6>
+                                    <a href="@submission.FileUrl" target="_blank" class="btn btn-info btn-sm">
+                                        <i class="bi bi-download"></i> Download/View File
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">Grade & Feedback</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="Score" class="form-label">Score *</label>
+                            <input type="number" class="form-control" 
+                                   id="Score" asp-for="Score" 
+                                   placeholder="Enter score" min="0" max="1000" required>
+                            <small class="form-text text-muted">Enter the score out of the maximum points</small>
+                            <span asp-validation-for="Score" class="invalid-feedback"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Feedback" class="form-label">Feedback</label>
+                            <textarea class="form-control" id="Feedback" asp-for="Feedback" 
+                                      rows="4" placeholder="Enter your feedback for the student"></textarea>
+                            <small class="form-text text-muted">Provide helpful feedback for the student's improvement</small>
+                        </div>
+
+                        <input type="hidden" asp-for="SubmissionId" value="@submission.Id">
+                    </div>
+
+                    <div class="card-footer">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Submit Grade
+                        </button>
+                        <a href="@Url.Action("Details", new { id = submission.AssignmentId })" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
