@@ -9,6 +9,7 @@ namespace Learning_Management_System.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public class ExamController : ControllerBase
     {
         private readonly ApplicationDbContext _dbContext;
@@ -77,7 +78,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> CreateExam([FromBody] CreateExamDto dto)
         {
             if (!ModelState.IsValid)

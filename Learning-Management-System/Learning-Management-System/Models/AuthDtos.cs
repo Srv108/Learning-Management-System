@@ -18,6 +18,7 @@ namespace Learning_Management_System.Models
     {
         public bool Succeeded { get; set; }
         public string? Token { get; set; }
+        public string? UserId { get; set; }
         public string? Error { get; set; }
     }
 }

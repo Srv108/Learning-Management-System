@@ -1,4 +1,6 @@
+using Learning_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Text.Json;
@@ -9,11 +11,15 @@ namespace Learning_Management_System.Controllers
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly SignInManager<AppUser> _signInManager;
+        private readonly UserManager<AppUser> _userManager;
 
-        public AuthMvcController(IHttpClientFactory httpClientFactory, IConfiguration configuration)
+        public AuthMvcController(IHttpClientFactory httpClientFactory, IConfiguration configuration, SignInManager<AppUser> signInManager, UserManager<AppUser> userManager)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+            _signInManager = signInManager;
+            _userManager = userManager;
         }
 
         [AllowAnonymous]
@@ -85,6 +91,21 @@ namespace Learning_Management_System.Controllers
                         Console.WriteLine($"[REGISTER] Registration successful, setting session");
                         HttpContext.Session.SetString("JwtToken", token);
                         HttpContext.Session.SetString("UserEmail", model.Email);
+                        
+                        // Get UserId from response
+                        if (root.TryGetProperty("userId", out var userIdProp))
+                            HttpContext.Session.SetString("UserId", userIdProp.GetString() ?? string.Empty);
+                        else if (root.TryGetProperty("UserId", out var userIdPropCaps))
+                            HttpContext.Session.SetString("UserId", userIdPropCaps.GetString() ?? string.Empty);
+                        
+                        // Sign in the user for cookie authentication
+                        var user = await _userManager.FindByEmailAsync(model.Email);
+                        if (user != null)
+                        {
+                            await _signInManager.SignInAsync(user, isPersistent: false);
+                            Console.WriteLine($"[REGISTER] User signed in with cookie auth");
+                        }
+                        
                         return RedirectToAction("Index", "Home");
                     }
                 }
@@ -179,7 +200,22 @@ namespace Learning_Management_System.Controllers
                             Console.WriteLine($"[LOGIN] Setting session with user data");
                             HttpContext.Session.SetString("JwtToken", token);
                             HttpContext.Session.SetString("UserEmail", model.Email);
+                            
+                            // Get UserId from response
+                            if (root.TryGetProperty("userId", out var userIdProp))
+                                HttpContext.Session.SetString("UserId", userIdProp.GetString() ?? string.Empty);
+                            else if (root.TryGetProperty("UserId", out var userIdPropCaps))
+                                HttpContext.Session.SetString("UserId", userIdPropCaps.GetString() ?? string.Empty);
+                            
                             Console.WriteLine($"[LOGIN] Session set - UserEmail: {model.Email}");
+
+                            // Sign in the user for cookie authentication
+                            var user = await _userManager.FindByEmailAsync(model.Email);
+                            if (user != null)
+                            {
+                                await _signInManager.SignInAsync(user, isPersistent: false);
+                                Console.WriteLine($"[LOGIN] User signed in with cookie auth");
+                            }
 
                             Console.WriteLine($"[LOGIN] Redirecting to Home");
                             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -227,7 +263,9 @@ namespace Learning_Management_System.Controllers
         {
             HttpContext.Session.Remove("JwtToken");
             HttpContext.Session.Remove("UserEmail");
-            Console.WriteLine("[LOGOUT] User logged out, session cleared");
+            HttpContext.Session.Remove("UserId");
+            await _signInManager.SignOutAsync();
+            Console.WriteLine("[LOGOUT] User logged out, session cleared and signed out");
             return RedirectToAction("Login");
         }
     }

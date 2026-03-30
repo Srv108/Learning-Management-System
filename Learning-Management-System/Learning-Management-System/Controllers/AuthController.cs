@@ -49,7 +49,7 @@ namespace Learning_Management_System.Controllers
             var roles = await _userManager.GetRolesAsync(user);
             var token = await _jwtTokenService.CreateTokenAsync(user, roles);
 
-            return Ok(new AuthResponse { Succeeded = true, Token = token });
+            return Ok(new AuthResponse { Succeeded = true, Token = token, UserId = user.Id });
         }
 
         [HttpPost("login")]
@@ -65,7 +65,7 @@ namespace Learning_Management_System.Controllers
             var roles = await _userManager.GetRolesAsync(user);
             var token = await _jwtTokenService.CreateTokenAsync(user, roles);
 
-            return Ok(new AuthResponse { Succeeded = true, Token = token });
+            return Ok(new AuthResponse { Succeeded = true, Token = token, UserId = user.Id });
         }
 
         [Authorize(Roles = "Admin")]

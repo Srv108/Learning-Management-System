@@ -1,0 +1,104 @@
+@model List<ExamDto>
+
+@{
+    ViewData["Title"] = "Exam Management";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3">📝 Exam Management</h1>
+                <a class="btn btn-success" asp-action="Create">
+                    <i class="bi bi-plus-circle"></i> Schedule New Exam
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search exams by title or subject..." />
+        </div>
+        <div class="col-md-3">
+            <select id="typeFilter" class="form-select">
+                <option value="">All Types</option>
+                <option value="MIDTERM">Midterm</option>
+                <option value="FINAL">Final</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <input type="date" id="dateFilter" class="form-control" />
+        </div>
+    </div>
+
+    <!-- Exams Grid -->
+    <div class="row" id="examsContainer">
+        @foreach (var exam in Model)
+        {
+            <div class="col-md-6 col-lg-4 mb-4 exam-card" data-title="@exam.Title.ToLower()" data-subject="@exam.SubjectName.ToLower()" data-type="@exam.ExamType" data-date="@exam.ExamDate.ToString("yyyy-MM-dd")">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">@exam.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <strong>Subject:</strong> @exam.SubjectName<br />
+                            <strong>Type:</strong> <span class="badge bg-secondary">@exam.ExamType</span><br />
+                            <strong>Max Score:</strong> @exam.MaxScore<br />
+                            <strong>Date:</strong> @exam.ExamDate.ToString("MMM dd, yyyy")<br />
+                            <strong>Created by:</strong> @exam.CreatedByName
+                        </p>
+                    </div>
+                    <div class="card-footer">
+                        <a class="btn btn-primary btn-sm" asp-action="Results" asp-route-examId="@exam.Id">
+                            <i class="bi bi-bar-chart"></i> View Results
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center mt-5">
+            <i class="bi bi-calendar-x text-muted" style="font-size: 3rem;"></i>
+            <h4 class="text-muted mt-3">No exams scheduled yet</h4>
+            <p class="text-muted">Start by scheduling your first exam!</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            function filterExams() {
+                const search = $('#searchInput').val().toLowerCase();
+                const type = $('#typeFilter').val();
+                const date = $('#dateFilter').val();
+
+                $('.exam-card').each(function() {
+                    const $card = $(this);
+                    const title = $card.data('title');
+                    const subject = $card.data('subject');
+                    const examType = $card.data('type');
+                    const examDate = $card.data('date');
+
+                    const matchesSearch = !search || title.includes(search) || subject.includes(search);
+                    const matchesType = !type || examType === type;
+                    const matchesDate = !date || examDate === date;
+
+                    if (matchesSearch && matchesType && matchesDate) {
+                        $card.show();
+                    } else {
+                        $card.hide();
+                    }
+                });
+            }
+
+            $('#searchInput, #typeFilter, #dateFilter').on('input change', filterExams);
+        });
+    </script>
+}

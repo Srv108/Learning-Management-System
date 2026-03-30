@@ -507,6 +507,10 @@ namespace Learning_Management_System.Services
                 var course = courses.FirstOrDefault(c => c.Id == enrollment.Batch.CourseId);
                 if (course != null)
                 {
+                    // Check if progress already exists
+                    if (await _context.StudentCourseProgress.AnyAsync(p => p.StudentId == enrollment.StudentId && p.CourseId == course.Id))
+                        continue;
+
                     var attendancePercentage = Random.Shared.Next(20, 100);
                     var assignmentScore = Random.Shared.Next(50, 95);
                     var examScore = Random.Shared.Next(50, 95);
