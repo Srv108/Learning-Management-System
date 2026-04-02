@@ -6,8 +6,8 @@
     <title>@ViewData["Title"] - Learning_Management_System</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Learning_Management_System.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
@@ -25,15 +25,22 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
+                        @{
+                            var userEmail = Context.Session.GetString("UserEmail");
+                            var jwtToken = Context.Session.GetString("JwtToken");
+                        }
+                        @if (!string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Courses">📚 Courses</a>
+                            </li>
+                            <!-- Subjects, Enrollments and Attendance links removed per request -->
+                        }
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
                     </ul>
                     <ul class="navbar-nav">
-                        @{
-                            var userEmail = Context.Session.GetString("UserEmail");
-                            var jwtToken = Context.Session.GetString("JwtToken");
-                        }
                         @if (!string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken))
                         {
                             <li class="nav-item">

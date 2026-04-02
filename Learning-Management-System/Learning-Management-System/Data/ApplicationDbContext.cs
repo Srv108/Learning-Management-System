@@ -72,7 +72,8 @@ namespace Learning_Management_System.Data
 
             builder.Entity<ExamResult>()
                 .HasOne(er => er.Exam)
-                .WithMany()
+                .WithMany(e => e.Results)
+                .HasForeignKey(er => er.ExamId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<AssignmentGrade>()

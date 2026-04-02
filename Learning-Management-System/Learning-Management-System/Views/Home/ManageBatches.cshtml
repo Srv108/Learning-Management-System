@@ -1,0 +1,170 @@
+@{
+    ViewData["Title"] = "Manage Batches";
+    var jwtToken = Context.Session.GetString("JwtToken") ?? "";
+    var courseId = Context.Request.Query["courseId"].ToString();
+    var batchId = Context.Request.Query["batchId"].ToString();
+    var isCourseCoordinator = ViewBag.IsCourseCoordinator ?? false;
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Manage Batches</h1>
+        <div>
+            <a href="@Url.Action("Courses","Home")" class="btn btn-outline-secondary">Back to Courses</a>
+            @if (isCourseCoordinator)
+            {
+                <button class="btn btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#addBatchModal">Add Batch</button>
+            }
+        </div>
+    </div>
+
+    <div id="batchesContainer">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Batch Name</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
+                        <th>Enrollments</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="batchesTable">
+                    <tr><td colspan="5" class="text-center text-muted">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Batch Modal -->
+<div class="modal fade" id="addBatchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title" id="batchModalTitle">Add Batch</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="batchForm">
+                    <input type="hidden" id="editBatchId" />
+                    <div class="mb-3">
+                        <label class="form-label">Batch Name *</label>
+                        <input class="form-control" id="batchName" required />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date *</label>
+                            <input type="date" class="form-control" id="batchStart" required />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Date *</label>
+                            <input type="date" class="form-control" id="batchEnd" required />
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-primary" id="saveBatchBtn">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const courseId = '@courseId';
+    const jwtToken = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(jwtToken ?? ""));
+    const isCourseCoordinator = @Html.Raw(isCourseCoordinator ? "true" : "false");
+
+    document.addEventListener('DOMContentLoaded', () => {
+        if (!courseId) {
+            document.getElementById('batchesTable').innerHTML = '<tr><td colspan="5" class="text-danger text-center">No course selected</td></tr>';
+            return;
+        }
+        loadBatches();
+        document.getElementById('saveBatchBtn').addEventListener('click', saveBatch);
+    });
+
+    async function loadBatches() {
+        try {
+            const res = await fetch(`/api/CourseBatch/course/${courseId}`, { headers: { 'Authorization': `Bearer ${jwtToken}` } });
+            if (!res.ok) return document.getElementById('batchesTable').innerHTML = '<tr><td colspan="5" class="text-center text-muted">No batches</td></tr>';
+            const batches = await res.json();
+            const rows = batches.map(b => `
+                <tr>
+                    <td>${b.batchName}</td>
+                    <td>${b.startDate ? new Date(b.startDate).toLocaleDateString() : '-'}</td>
+                    <td>${b.endDate ? new Date(b.endDate).toLocaleDateString() : '-'}</td>
+                    <td>${b.enrollmentCount ?? 0}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="viewBatch(${b.id})"><i class="bi bi-eye"></i></button>
+                        ${isCourseCoordinator ? `<button class="btn btn-sm btn-outline-secondary me-1" onclick="openEdit(${b.id})"><i class="bi bi-pencil"></i></button>` : ''}
+                        ${isCourseCoordinator ? `<button class="btn btn-sm btn-outline-danger" onclick="delBatch(${b.id})"><i class="bi bi-trash"></i></button>` : ''}
+                    </td>
+                </tr>`).join('');
+            document.getElementById('batchesTable').innerHTML = rows || '<tr><td colspan="5" class="text-center text-muted">No batches</td></tr>';
+        } catch (err) {
+            console.error(err);
+            document.getElementById('batchesTable').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading batches</td></tr>';
+        }
+    }
+
+    function viewBatch(id) { alert('Batch ID: ' + id); }
+
+    function openEdit(id) {
+        // load batch details
+        fetch(`/api/CourseBatch/${id}`, { headers: { 'Authorization': `Bearer ${jwtToken}` } })
+            .then(r => r.json())
+            .then(b => {
+                document.getElementById('editBatchId').value = b.id;
+                document.getElementById('batchName').value = b.batchName;
+                document.getElementById('batchStart').value = b.startDate ? new Date(b.startDate).toISOString().substr(0,10) : '';
+                document.getElementById('batchEnd').value = b.endDate ? new Date(b.endDate).toISOString().substr(0,10) : '';
+                document.getElementById('batchModalTitle').textContent = 'Edit Batch';
+                new bootstrap.Modal(document.getElementById('addBatchModal')).show();
+            }).catch(e => { console.error(e); showAlert('Failed to load batch'); });
+    }
+
+    async function saveBatch() {
+        const id = document.getElementById('editBatchId').value;
+        const name = document.getElementById('batchName').value.trim();
+        const start = document.getElementById('batchStart').value;
+        const end = document.getElementById('batchEnd').value;
+        if (!name || !start || !end) return showAlert('Please fill required fields');
+        if (new Date(end) <= new Date(start)) return showAlert('End date must be after start date');
+
+        const payload = { courseId: Number(courseId), batchName: name, startDate: start, endDate: end };
+        try {
+            let res;
+            if (id) {
+                res = await fetch(`/api/CourseBatch/${id}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            } else {
+                res = await fetch('/api/CourseBatch', { method: 'POST', headers: { 'Authorization': `Bearer ${jwtToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            }
+            if (res.ok) {
+                showAlert('Saved', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('addBatchModal')).hide();
+                document.getElementById('batchForm').reset();
+                loadBatches();
+            } else {
+                const t = await res.text(); showAlert('Error: ' + (t || res.status));
+            }
+        } catch (e) { console.error(e); showAlert('Failed to save batch'); }
+    }
+
+    async function delBatch(id) {
+        if (!confirm('Delete this batch?')) return;
+        try {
+            const res = await fetch(`/api/CourseBatch/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${jwtToken}` } });
+            if (res.ok) { showAlert('Deleted', 'success'); loadBatches(); } else { showAlert('Delete failed'); }
+        } catch (e) { console.error(e); showAlert('Delete failed'); }
+    }
+
+    function showAlert(m, t='info') {
+        const a = document.createElement('div'); a.className = `alert alert-${t} alert-dismissible`; a.innerHTML = m + '<button class="btn-close" data-bs-dismiss="alert"></button>';
+        document.querySelector('.container').prepend(a);
+        setTimeout(() => a.remove(), 4000);
+    }
+</script>

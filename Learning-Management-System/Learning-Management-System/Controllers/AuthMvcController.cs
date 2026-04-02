@@ -2,6 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Text.Json;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
 
 namespace Learning_Management_System.Controllers
 {
@@ -82,9 +85,27 @@ namespace Learning_Management_System.Controllers
 
                     if (succeeded && !string.IsNullOrEmpty(token))
                     {
-                        Console.WriteLine($"[REGISTER] Registration successful, setting session");
+                        Console.WriteLine("[REGISTER] Registration successful, setting session");
                         HttpContext.Session.SetString("JwtToken", token);
                         HttpContext.Session.SetString("UserEmail", model.Email);
+
+                        // Decode token to extract role and store in session for UI
+                        try
+                        {
+                            var handler = new JwtSecurityTokenHandler();
+                            var jwt = handler.ReadJwtToken(token);
+                            var roleClaim = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                                            ?? jwt.Claims.FirstOrDefault(c => c.Type == "role")?.Value
+                                            ?? "Student";
+                            HttpContext.Session.SetString("UserRole", roleClaim);
+                            Console.WriteLine($"[REGISTER] UserRole set to: {roleClaim}");
+                        }
+                        catch (Exception rex)
+                        {
+                            Console.WriteLine($"[REGISTER] Failed to decode token for role: {rex.Message}");
+                            HttpContext.Session.SetString("UserRole", "Student");
+                        }
+
                         return RedirectToAction("Index", "Home");
                     }
                 }
@@ -176,12 +197,30 @@ namespace Learning_Management_System.Controllers
 
                         if (succeeded && !string.IsNullOrEmpty(token))
                         {
-                            Console.WriteLine($"[LOGIN] Setting session with user data");
+                            Console.WriteLine("[LOGIN] Setting session with user data");
                             HttpContext.Session.SetString("JwtToken", token);
                             HttpContext.Session.SetString("UserEmail", model.Email);
+
+                            // Decode token and set role in session so views can render appropriate UI
+                            try
+                            {
+                                var handler = new JwtSecurityTokenHandler();
+                                var jwt = handler.ReadJwtToken(token);
+                                var roleClaim = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                                                ?? jwt.Claims.FirstOrDefault(c => c.Type == "role")?.Value
+                                                ?? "Student";
+                                HttpContext.Session.SetString("UserRole", roleClaim);
+                                Console.WriteLine($"[LOGIN] UserRole set to: {roleClaim}");
+                            }
+                            catch (Exception rex)
+                            {
+                                Console.WriteLine($"[LOGIN] Failed to decode token for role: {rex.Message}");
+                                HttpContext.Session.SetString("UserRole", "Student");
+                            }
+
                             Console.WriteLine($"[LOGIN] Session set - UserEmail: {model.Email}");
 
-                            Console.WriteLine($"[LOGIN] Redirecting to Home");
+                            Console.WriteLine("[LOGIN] Redirecting to Home");
                             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                                 return Redirect(returnUrl);
 

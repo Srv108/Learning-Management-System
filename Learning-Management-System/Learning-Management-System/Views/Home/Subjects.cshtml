@@ -1,0 +1,363 @@
+@{
+    ViewData["Title"] = "Subject Management";
+}
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-5 fw-bold">Subject Management</h1>
+        <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+            <i class="bi bi-plus-circle"></i> Add Subject
+        </button>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input type="text" class="form-control form-control-lg" id="subjectSearch" placeholder="Search subjects...">
+        </div>
+        <div class="col-md-6">
+            <select class="form-select form-select-lg" id="courseFilter">
+                <option value="">All Courses</option>
+                <option value="1">Mathematics</option>
+                <option value="2">Physics</option>
+                <option value="3">Chemistry</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Subjects Table -->
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="table-primary">
+                <tr>
+                    <th>Subject Name</th>
+                    <th>Course</th>
+                    <th>Description</th>
+                    <th>Teachers</th>
+                    <th>Created Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        <strong>Calculus I</strong>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">Mathematics</span>
+                    </td>
+                    <td>Differential and Integral Calculus</td>
+                    <td>
+                        <span class="badge bg-info">2 Teachers</span>
+                    </td>
+                    <td>2024-01-15</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#viewSubjectModal">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#editSubjectModal">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSubject(1)">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Linear Algebra</strong>
+                    </td>
+                    <td>
+                        <span class="badge bg-primary">Mathematics</span>
+                    </td>
+                    <td>Matrices, Vectors, and Linear Systems</td>
+                    <td>
+                        <span class="badge bg-info">1 Teacher</span>
+                    </td>
+                    <td>2024-01-20</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-2">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Mechanics</strong>
+                    </td>
+                    <td>
+                        <span class="badge bg-success">Physics</span>
+                    </td>
+                    <td>Classical Mechanics and Motion</td>
+                    <td>
+                        <span class="badge bg-info">3 Teachers</span>
+                    </td>
+                    <td>2024-02-01</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-2">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Organic Chemistry</strong>
+                    </td>
+                    <td>
+                        <span class="badge bg-warning text-dark">Chemistry</span>
+                    </td>
+                    <td>Structure, Properties, and Reactions</td>
+                    <td>
+                        <span class="badge bg-info">2 Teachers</span>
+                    </td>
+                    <td>2024-02-10</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-2">
+                            <i class="bi bi-eye"></i> View
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-2">
+                            <i class="bi bi-pencil"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Subject Modal -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Add New Subject</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addSubjectForm">
+                    <div class="mb-3">
+                        <label for="subjectCourse" class="form-label">Course *</label>
+                        <select class="form-select form-select-lg" id="subjectCourse" required>
+                            <option selected disabled>Select a course</option>
+                            <option value="1">Mathematics</option>
+                            <option value="2">Physics</option>
+                            <option value="3">Chemistry</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subjectName" class="form-label">Subject Name *</label>
+                        <input type="text" class="form-control form-control-lg" id="subjectName" placeholder="Enter subject name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subjectDesc" class="form-label">Description</label>
+                        <textarea class="form-control form-control-lg" id="subjectDesc" rows="3" placeholder="Enter subject description"></textarea>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        <i class="bi bi-info-circle"></i> Fill in all required fields marked with *
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-lg" onclick="addSubject()">
+                    <i class="bi bi-plus-circle"></i> Add Subject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Subject Modal -->
+<div class="modal fade" id="editSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">Edit Subject</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editSubjectForm">
+                    <div class="mb-3">
+                        <label for="editSubjectCourse" class="form-label">Course *</label>
+                        <select class="form-select form-select-lg" id="editSubjectCourse" required disabled>
+                            <option value="1">Mathematics</option>
+                            <option value="2">Physics</option>
+                            <option value="3">Chemistry</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSubjectName" class="form-label">Subject Name *</label>
+                        <input type="text" class="form-control form-control-lg" id="editSubjectName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editSubjectDesc" class="form-label">Description</label>
+                        <textarea class="form-control form-control-lg" id="editSubjectDesc" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success btn-lg" onclick="updateSubject()">
+                    <i class="bi bi-check-circle"></i> Update Subject
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Subject Modal -->
+<div class="modal fade" id="viewSubjectModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">Subject Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Subject Name:</strong>
+                        <p id="viewSubjectName">Calculus I</p>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Course:</strong>
+                        <p id="viewSubjectCourse">Mathematics</p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <strong>Description:</strong>
+                    <p id="viewSubjectDesc">Differential and Integral Calculus for engineering students</p>
+                </div>
+                <hr>
+                <h6 class="mb-3">Assigned Teachers</h6>
+                <div class="list-group" id="teacherList">
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>Dr. John Smith</strong>
+                            <span class="badge bg-primary">Main Instructor</span>
+                        </div>
+                        <small class="text-muted">john.smith@university.edu</small>
+                    </div>
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>Prof. Sarah Johnson</strong>
+                            <span class="badge bg-secondary">Co-Instructor</span>
+                        </div>
+                        <small class="text-muted">sarah.johnson@university.edu</small>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-responsive {
+        border-radius: 0.5rem;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .badge {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.8rem;
+    }
+
+    .btn-sm {
+        transition: all 0.2s ease;
+    }
+
+    .btn-sm:hover {
+        transform: scale(1.05);
+    }
+
+    @@media (max-width: 768px) {
+        .table {
+            font-size: 0.9rem;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.6rem;
+            font-size: 0.8rem;
+        }
+
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+    }
+
+<script>
+    function addSubject() {
+        const course = document.getElementById('subjectCourse').value;
+        const name = document.getElementById('subjectName').value;
+        const desc = document.getElementById('subjectDesc').value;
+
+        if (!course || !name) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // API call would go here
+        alert('Subject added successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('addSubjectModal')).hide();
+        document.getElementById('addSubjectForm').reset();
+    }
+
+    function updateSubject() {
+        const name = document.getElementById('editSubjectName').value;
+        const desc = document.getElementById('editSubjectDesc').value;
+
+        if (!name) {
+            alert('Please fill in all required fields');
+            return;
+        }
+
+        // API call would go here
+        alert('Subject updated successfully!');
+        bootstrap.Modal.getInstance(document.getElementById('editSubjectModal')).hide();
+    }
+
+    function deleteSubject(subjectId) {
+        if (confirm('Are you sure you want to delete this subject?')) {
+            // API call would go here
+            alert('Subject deleted successfully!');
+        }
+    }
+
+    // Search functionality
+    document.getElementById('subjectSearch').addEventListener('keyup', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        // Filter logic here
+    });
+
+    // Course filter
+    document.getElementById('courseFilter').addEventListener('change', function(e) {
+        const course = e.target.value;
+        // Filter logic here
+    });
+</script>

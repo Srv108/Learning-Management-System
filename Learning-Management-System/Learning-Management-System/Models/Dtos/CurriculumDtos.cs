@@ -229,6 +229,9 @@ public class AttendanceRecordDto
 {
     public long Id { get; set; }
     public long SessionId { get; set; }
+    public long SubjectId { get; set; }
+    public string SubjectName { get; set; } = string.Empty;
+    public DateTime SessionDate { get; set; }
     public string StudentId { get; set; } = string.Empty;
     public string StudentName { get; set; } = string.Empty;
     public string StudentEmail { get; set; } = string.Empty;

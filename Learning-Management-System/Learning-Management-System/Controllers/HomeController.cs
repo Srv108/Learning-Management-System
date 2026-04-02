@@ -34,6 +34,37 @@ namespace Learning_Management_System.Controllers
             return View();
         }
 
+        [HttpGet]
+        public IActionResult Courses()
+        {
+            // Page that hosts the course management UI (uses API endpoints under /api/Course)
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var jwt = HttpContext.Session.GetString("JwtToken") ?? string.Empty;
+            var userRole = HttpContext.Session.GetString("UserRole") ?? "Student";
+
+            ViewBag.UserEmail = userEmail;
+            ViewBag.JwtToken = jwt;
+            ViewBag.UserRole = userRole;
+            ViewBag.IsCourseCoordinator = (userRole == "CourseCoordinator" || userRole == "Admin");
+
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ManageBatches()
+        {
+            var userEmail = HttpContext.Session.GetString("UserEmail");
+            var jwt = HttpContext.Session.GetString("JwtToken") ?? string.Empty;
+            var userRole = HttpContext.Session.GetString("UserRole") ?? "Student";
+
+            ViewBag.UserEmail = userEmail;
+            ViewBag.JwtToken = jwt;
+            ViewBag.UserRole = userRole;
+            ViewBag.IsCourseCoordinator = (userRole == "CourseCoordinator" || userRole == "Admin");
+
+            return View();
+        }
+
         [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
