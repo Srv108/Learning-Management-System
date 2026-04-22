@@ -9,78 +9,88 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Learning_Management_System.styles.css" asp-append-version="true" />
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    📚 Learning Management System
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="ExamMvc" asp-action="Index">Exam Management</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @{
-                            var userEmail = Context.Session.GetString("UserEmail");
-                            var jwtToken = Context.Session.GetString("JwtToken");
-                        }
-                        @if (!string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken))
-                        {
+<body class="d-flex flex-column min-vh-100">
+    @{
+        var hideNavBar = ViewData["HideNavBar"] as bool? ?? false;
+        var hideFooter = ViewData["HideFooter"] as bool? ?? false;
+    }
+    @if (!hideNavBar)
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container-fluid">
+                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                        KnowledgeBase
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
-                                <span class="nav-link text-dark">
-                                    👤 @userEmail
-                                </span>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                             </li>
                             <li class="nav-item">
-                                <form method="post" asp-action="Logout" asp-controller="AuthMvc" style="display: inline;">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm ms-2">
-                                        🚪 Logout
-                                    </button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="btn btn-primary btn-sm ms-2" asp-area="" asp-controller="AuthMvc" asp-action="Login">
-                                    🔐 Login
-                                </a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                             </li>
                             <li class="nav-item">
-                                <a class="btn btn-outline-primary btn-sm ms-2" asp-area="" asp-controller="AuthMvc" asp-action="Register">
-                                    ✍️ Register
-                                </a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="ExamMvc" asp-action="Index">Exam Management</a>
                             </li>
-                        }
-                    </ul>
+                        </ul>
+                        <ul class="navbar-nav">
+                            @{
+                                var userEmail = Context.Session.GetString("UserEmail");
+                                var jwtToken = Context.Session.GetString("JwtToken");
+                            }
+                            @if (!string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken))
+                            {
+                                <li class="nav-item">
+                                    <span class="nav-link text-dark">
+                                        @userEmail
+                                    </span>
+                                </li>
+                                <li class="nav-item">
+                                    <form method="post" asp-action="Logout" asp-controller="AuthMvc" style="display: inline;">
+                                        <button type="submit" class="btn btn-outline-danger btn-sm ms-2">
+                                            Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="btn btn-primary btn-sm ms-2" asp-area="" asp-controller="AuthMvc" asp-action="Login">
+                                        Login
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="btn btn-outline-primary btn-sm ms-2" asp-area="" asp-controller="AuthMvc" asp-action="Register">
+                                        Register
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
+            </nav>
+        </header>
+    }
+    <div class="container flex-grow-1">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Learning_Management_System - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
+    @* @if (!hideFooter)
+    {
+        <footer class="border-top footer text-muted mt-auto">
+            <div class="container">
+                &copy; 2026 - Learning_Management_System - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </div>
+        </footer>
+    } *@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>

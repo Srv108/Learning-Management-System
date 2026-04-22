@@ -2,71 +2,75 @@
 
 @{
     ViewData["Title"] = "Register";
+    ViewData["HideNavBar"] = true;
+    ViewData["HideFooter"] = true;
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-lg">
-                <div class="card-body p-5">
-                    <h2 class="card-title text-center mb-4">Create Account</h2>
-                    <p class="text-center text-muted mb-4">Join the Learning Management System</p>
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="mb-4">
+            <h1 class="auth-title">Create an account</h1>
+            <div class="auth-subtitle">Enter your details to get started.</div>
+        </div>
 
-                    <form method="post" asp-action="Register" asp-controller="AuthMvc">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger d-none" id="validationSummary"></div>
+        <form method="post" asp-action="Register" asp-controller="AuthMvc">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-                        <!-- Full Name Field -->
-                        <div class="mb-3">
-                            <label class="form-label" for="FullName">Full Name</label>
-                            <input type="text" class="form-control" id="FullName" asp-for="FullName" placeholder="Enter your full name" required>
-                            <span asp-validation-for="FullName" class="text-danger"></span>
-                        </div>
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label auth-label" for="FullName">FULL NAME</label>
+                    <input type="text" class="form-control" id="FullName" asp-for="FullName" placeholder="" required />
+                    <span asp-validation-for="FullName" class="text-danger small"></span>
+                </div>
 
-                        <!-- Email Field -->
-                        <div class="mb-3">
-                            <label class="form-label" for="Email">Email Address</label>
-                            <input type="email" class="form-control" id="Email" asp-for="Email" placeholder="Enter your email" required>
-                            <span asp-validation-for="Email" class="text-danger"></span>
-                        </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label auth-label" for="Role">ROLE</label>
+                    <select class="form-select" id="Role" asp-for="Role" required>
+                        <option value="Student">Student</option>
+                        <option value="Teacher">Teacher</option>
+                    </select>
+                    <div class="text-muted small mt-1">Contact admin to register as Coordinator or Admin</div>
+                </div>
 
-                        <!-- Role Selection -->
-                        <div class="mb-3">
-                            <label class="form-label" for="Role">Register As</label>
-                            <select class="form-select" id="Role" asp-for="Role" required>
-                                <option value="Student">Student</option>
-                                <option value="Teacher">Teacher</option>
-                            </select>
-                            <small class="text-muted d-block mt-1">Contact admin to register as Coordinator or Admin</small>
-                        </div>
+                <div class="col-12">
+                    <label class="form-label auth-label" for="Email">EMAIL</label>
+                    <input type="email" class="form-control" id="Email" asp-for="Email" placeholder="name@company.com" required />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
 
-                        <!-- Password Field -->
-                        <div class="mb-3">
-                            <label class="form-label" for="Password">Password</label>
-                            <input type="password" class="form-control" id="Password" asp-for="Password" placeholder="Create a strong password" required>
-                            <small class="text-muted d-block mt-1">
-                                Password must be at least 8 characters, contain uppercase, lowercase, and a digit.
-                            </small>
-                            <span asp-validation-for="Password" class="text-danger"></span>
-                        </div>
+                @* --- Password Field --- *@
+                <div class="col-12 col-md-6">
+                    <label class="form-label auth-label" for="Password">PASSWORD</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="Password" asp-for="Password" placeholder="" required />
+                        <button class="btn btn-outline-secondary d-flex align-items-center" type="button" tabindex="-1" data-toggle="password" data-target="#Password" aria-label="Show password">
+                            <img src="~/assets/icon-eye.png" alt="View" style="width: 20px; height: auto;" />
+                        </button>
+                    </div>
+                    <div class="text-muted small mt-1">At least 8 characters with uppercase, lowercase, and a digit.</div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
 
-                        <!-- Confirm Password Field -->
-                        <div class="mb-4">
-                            <label class="form-label" for="ConfirmPassword">Confirm Password</label>
-                            <input type="password" class="form-control" id="ConfirmPassword" asp-for="ConfirmPassword" placeholder="Confirm your password" required>
-                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-                        </div>
-
-                        <!-- Submit Button -->
-                        <button type="submit" class="btn btn-primary w-100 mb-3">Register</button>
-
-                        <!-- Login Link -->
-                        <div class="text-center">
-                            <p class="mb-0">Already have an account? <a href="@Url.Action("Login", "AuthMvc")" class="text-decoration-none">Login here</a></p>
-                        </div>
-                    </form>
+                @* --- Confirm Password Field --- *@
+                <div class="col-12 col-md-6">
+                    <label class="form-label auth-label" for="ConfirmPassword">CONFIRM PASSWORD</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="ConfirmPassword" asp-for="ConfirmPassword" placeholder="" required />
+                        <button class="btn btn-outline-secondary d-flex align-items-center" type="button" tabindex="-1" data-toggle="password" data-target="#ConfirmPassword" aria-label="Show password">
+                            <img src="~/assets/icon-eye.png" alt="View" style="width: 200px; height: auto; max-width: 20px;" />
+                        </button>
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                 </div>
             </div>
-        </div>
+
+            <button type="submit" class="btn btn-primary w-100 mt-3 mb-3">Sign up</button>
+
+            <div class="text-center">
+                <span class="text-muted">Already have an account? </span>
+                <a class="text-decoration-none" asp-controller="AuthMvc" asp-action="Login">Sign in</a>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -83,7 +87,6 @@
                 return false;
             }
 
-            // Password strength check
             var hasUpper = /[A-Z]/.test(password);
             var hasLower = /[a-z]/.test(password);
             var hasDigit = /[0-9]/.test(password);
@@ -95,33 +98,82 @@
                 return false;
             }
         });
+
+        // Toggle Password Visibility Logic
+        (function(){
+            document.querySelectorAll('[data-toggle="password"]').forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                    var targetSelector = btn.getAttribute('data-target');
+                    var input = document.querySelector(targetSelector);
+                    var img = btn.querySelector('img');
+
+                    if (input && input.type === 'password') {
+                        input.type = 'text';
+                        btn.setAttribute('aria-label', 'Hide password');
+                        if(img) img.style.opacity = "0.5"; // Visual cue that password is visible
+                    } else if (input) {
+                        input.type = 'password';
+                        btn.setAttribute('aria-label', 'Show password');
+                        if(img) img.style.opacity = "1";
+                    }
+                });
+            });
+        })();
     </script>
 }
 
 <style>
-    .card {
-        border: none;
-        border-radius: 10px;
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem 0;
     }
 
-    .card-body {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    .auth-card {
+        width: 100%;
+        max-width: 680px;
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
     }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #007bff;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    @@media (min-width: 768px) {
+        .auth-card {
+            padding: 1.75rem;
+        }
     }
 
-    .btn-primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border: none;
-        font-weight: 600;
-        letter-spacing: 0.5px;
+    .auth-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin: 0;
     }
 
-    .btn-primary:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    .auth-subtitle {
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+
+    .auth-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #343a40;
+    }
+
+    /* Ensures the image button matches the height of the input */
+    .input-group .btn {
+        border-color: #dee2e6;
+        background-color: #fff;
+    }
+
+    /* Hide the default Edge/IE password reveal button */
+    input::-ms-reveal,
+    input::-ms-clear {
+        display: none;
     }
 </style>

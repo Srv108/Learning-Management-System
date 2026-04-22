@@ -258,6 +258,12 @@ namespace Learning_Management_System.Controllers
         }
 
         [AllowAnonymous]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> Logout()
         {
