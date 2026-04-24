@@ -78,7 +78,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
+        [Authorize(Roles = "ExamController")]
         public async Task<IActionResult> CreateExam([FromBody] CreateExamDto dto)
         {
             if (!ModelState.IsValid)
@@ -115,7 +115,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> UpdateExam(long id, [FromBody] UpdateExamDto dto)
         {
             if (!ModelState.IsValid)
@@ -139,16 +139,33 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator")]
+        [Authorize(Roles = "Admin,CourseCoordinator,ExamController")]
         public async Task<IActionResult> DeleteExam(long id)
         {
             var exam = await _dbContext.Exams.FirstOrDefaultAsync(e => !e.IsDeleted && e.Id == id);
             if (exam == null)
                 return NotFound(new { message = "Exam not found" });
 
+            // Soft-delete the exam
             exam.IsDeleted = true;
             exam.UpdatedAt = DateTime.UtcNow;
             _dbContext.Exams.Update(exam);
+
+            // Also mark related registrations as cancelled (soft-delete) so students/teachers see the cancellation
+            var regs = await _dbContext.Set<Models.ExamRegistration>()
+                .Where(r => !r.IsDeleted && r.ExamId == id)
+                .ToListAsync();
+
+            foreach (var r in regs)
+            {
+                r.IsDeleted = true;
+                r.Status = "CANCELLED";
+                r.UpdatedAt = DateTime.UtcNow;
+            }
+
+            if (regs.Any())
+                _dbContext.Set<Models.ExamRegistration>().UpdateRange(regs);
+
             await _dbContext.SaveChangesAsync();
 
             return NoContent();
@@ -187,6 +204,108 @@ namespace Learning_Management_System.Controllers
             return Ok(results);
         }
 
+        [HttpGet("student/me")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> GetExamsForCurrentStudent()
+        {
+            var username = User?.Identity?.Name ?? string.Empty;
+            if (string.IsNullOrEmpty(username))
+                return Unauthorized(new { message = "Invalid user" });
+
+            var student = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == username);
+            if (student == null)
+                return Unauthorized(new { message = "Invalid user" });
+
+            // Get course ids from student's enrollments
+            var courseIds = await _dbContext.Enrollments
+                .Where(e => !e.IsDeleted && e.StudentId == student.Id)
+                .Include(e => e.Batch)
+                .Select(e => e.Batch.CourseId)
+                .Distinct()
+                .ToListAsync();
+
+            var exams = await _dbContext.Exams
+                .Where(e => !e.IsDeleted && courseIds.Contains(e.Subject.CourseId))
+                .Include(e => e.Subject)
+                .Include(e => e.CreatedBy)
+                .Select(e => new ExamDto
+                {
+                    Id = e.Id,
+                    SubjectId = e.SubjectId,
+                    SubjectName = e.Subject != null ? e.Subject.Name : string.Empty,
+                    Title = e.Title,
+                    ExamType = e.ExamType,
+                    MaxScore = e.MaxScore,
+                    ExamDate = e.ExamDate,
+                    CreatedById = e.CreatedById,
+                    CreatedByName = e.CreatedBy != null ? e.CreatedBy.FullName : string.Empty,
+                    CreatedAt = e.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(exams);
+        }
+
+        [HttpPost("{examId}/enroll")]
+        [Authorize(Roles = "Student")]
+        public async Task<IActionResult> EnrollInExam(long examId)
+        {
+            var username = User?.Identity?.Name ?? string.Empty;
+            if (string.IsNullOrEmpty(username))
+                return Unauthorized(new { message = "Invalid user" });
+
+            var student = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == username);
+            if (student == null)
+                return Unauthorized(new { message = "Invalid user" });
+
+            var exam = await _dbContext.Exams.FirstOrDefaultAsync(e => !e.IsDeleted && e.Id == examId);
+            if (exam == null)
+                return NotFound(new { message = "Exam not found" });
+
+            var existing = await _dbContext.Set<Models.ExamRegistration>()
+                .FirstOrDefaultAsync(r => !r.IsDeleted && r.ExamId == examId && r.StudentId == student.Id);
+            if (existing != null)
+                return Conflict(new { message = "Already registered" });
+
+            var registration = new Models.ExamRegistration
+            {
+                ExamId = examId,
+                StudentId = student.Id,
+                Status = "REGISTERED",
+                CreatedAt = DateTime.UtcNow,
+                IsDeleted = false
+            };
+
+            _dbContext.Add(registration);
+            await _dbContext.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetResult), new { id = registration.Id }, new { registration.Id });
+        }
+
+        [HttpGet("{examId}/registrations")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        public async Task<IActionResult> GetRegistrations(long examId)
+        {
+            var exists = await _dbContext.Exams.AnyAsync(e => !e.IsDeleted && e.Id == examId);
+            if (!exists)
+                return NotFound(new { message = "Exam not found" });
+
+            var regs = await _dbContext.Set<Models.ExamRegistration>()
+                .Where(r => !r.IsDeleted && r.ExamId == examId)
+                .Include(r => r.Student)
+                .Select(r => new {
+                    r.Id,
+                    r.ExamId,
+                    StudentId = r.StudentId,
+                    StudentName = r.Student != null ? r.Student.FullName : string.Empty,
+                    r.Status,
+                    r.CreatedAt
+                })
+                .ToListAsync();
+
+            return Ok(regs);
+        }
+
         [HttpGet("result/{id}")]
         [Authorize(Roles = "Admin,CourseCoordinator,Teacher,Student")]
         public async Task<IActionResult> GetResult(long id)
@@ -220,7 +339,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPost("result")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> AddResult([FromBody] CreateExamResultDto dto)
         {
             if (!ModelState.IsValid)
@@ -233,6 +352,34 @@ namespace Learning_Management_System.Controllers
             var student = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == dto.StudentId);
             if (student == null)
                 return BadRequest(new { message = "Student not found" });
+
+            // Verify the student is registered for this exam
+            var registered = await _dbContext.Set<Models.ExamRegistration>()
+                .AnyAsync(r => !r.IsDeleted && r.ExamId == dto.ExamId && r.StudentId == dto.StudentId);
+            if (!registered)
+                return BadRequest(new { message = "Student is not registered for this exam" });
+
+            // Check attendance: if there are attendance sessions for the exam date & subject, require the student to have a PRESENT record
+            var examForCheck = await _dbContext.Exams.FirstOrDefaultAsync(e => !e.IsDeleted && e.Id == dto.ExamId);
+            if (examForCheck != null)
+            {
+                var start = examForCheck.ExamDate.Date;
+                var end = start.AddDays(1);
+
+                var sessionIds = await _dbContext.AttendanceSessions
+                    .Where(s => !s.IsDeleted && s.SubjectId == examForCheck.SubjectId && s.SessionDate >= start && s.SessionDate < end)
+                    .Select(s => s.Id)
+                    .ToListAsync();
+
+                if (sessionIds.Any())
+                {
+                    var attended = await _dbContext.AttendanceRecords
+                        .AnyAsync(ar => !ar.IsDeleted && sessionIds.Contains(ar.SessionId) && ar.StudentId == dto.StudentId && ar.Status == "PRESENT");
+
+                    if (!attended)
+                        return BadRequest(new { message = "Student did not attend the exam" });
+                }
+            }
 
             var already = await _dbContext.ExamResults.AnyAsync(r => !r.IsDeleted && r.ExamId == dto.ExamId && r.StudentId == dto.StudentId);
             if (already)
@@ -261,7 +408,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPut("result/{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Teacher")]
         public async Task<IActionResult> UpdateResult(long id, [FromBody] CreateExamResultDto dto)
         {
             if (!ModelState.IsValid)

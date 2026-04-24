@@ -1,0 +1,60 @@
+@model List<Learning_Management_System.Models.Dtos.ExamRegistrationDto>
+
+@{
+    ViewData["Title"] = "My Enrolled Exams";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h3>My Enrolled Exams</h3>
+            <p class="text-muted">This lists exams you've registered for.</p>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-clipboard-x text-muted" style="font-size: 3rem;"></i>
+            <h5 class="text-muted mt-3">You have not enrolled in any exams yet</h5>
+            <p class="text-muted">Visit the <a asp-action="Index">Exams</a> page to enroll.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var r in Model)
+            {
+                <div class="col-md-6 mb-4">
+                    <div class="card enroll-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <div class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
+                                        <i class="bi bi-journal-text" style="font-size:1.4rem;color:#0ea5e9"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">@r.Title</h5>
+                                    <div class="muted-small">@r.SubjectName &middot; @((DateTime)r.ExamDate).ToString("MMM dd, yyyy")</div>
+                                </div>
+                                <div class="text-end">
+                                    <div>
+                                        <span class="badge badge-enrolled">@r.Status</span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <a class="btn btn-primary btn-sm" asp-action="Results" asp-route-examId="@r.ExamId">Results</a>
+                                        <form method="post" asp-action="Unenroll" class="d-inline" onsubmit="return confirm('Cancel enrollment for this exam?');">
+                                            <input type="hidden" name="registrationId" value="@r.Id" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm ms-2">Cancel</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

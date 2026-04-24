@@ -27,6 +27,7 @@ namespace Learning_Management_System.Data
         public DbSet<AssignmentGrade> AssignmentGrades { get; set; }
         public DbSet<Exam> Exams { get; set; }
         public DbSet<ExamResult> ExamResults { get; set; }
+        public DbSet<Models.ExamRegistration> ExamRegistrations { get; set; }
         public DbSet<StudentCourseProgress> StudentCourseProgress { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -76,6 +77,13 @@ namespace Learning_Management_System.Data
                 .HasForeignKey(er => er.ExamId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            // ExamRegistration relation
+            builder.Entity<Models.ExamRegistration>()
+                .HasOne(er => er.Exam)
+                .WithMany()
+                .HasForeignKey(er => er.ExamId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             builder.Entity<AssignmentGrade>()
                 .HasOne(ag => ag.Submission)
                 .WithOne(s => s.Grade)
@@ -121,6 +129,10 @@ namespace Learning_Management_System.Data
 
             builder.Entity<ExamResult>()
                 .HasIndex(er => er.ExamId);
+
+            builder.Entity<Models.ExamRegistration>()
+                .HasIndex(er => new { er.ExamId, er.StudentId })
+                .IsUnique();
 
             builder.Entity<Submission>()
                 .HasIndex(s => s.AssignmentId);

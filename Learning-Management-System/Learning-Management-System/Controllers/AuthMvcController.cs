@@ -2,6 +2,7 @@ using Learning_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication;
 using System.Text;
 using System.Text.Json;
 
@@ -104,6 +105,10 @@ namespace Learning_Management_System.Controllers
                         {
                             await _signInManager.SignInAsync(user, isPersistent: false);
                             Console.WriteLine($"[REGISTER] User signed in with cookie auth");
+
+                            // Also sign in using the MVC cookie scheme to ensure role checks work
+                            var principal = await _signInManager.CreateUserPrincipalAsync(user);
+                            await HttpContext.SignInAsync("Cookies", principal);
                         }
                         
                         return RedirectToAction("Index", "Home");
@@ -215,6 +220,9 @@ namespace Learning_Management_System.Controllers
                             {
                                 await _signInManager.SignInAsync(user, isPersistent: false);
                                 Console.WriteLine($"[LOGIN] User signed in with cookie auth");
+
+                                var principal = await _signInManager.CreateUserPrincipalAsync(user);
+                                await HttpContext.SignInAsync("Cookies", principal);
                             }
 
                             Console.WriteLine($"[LOGIN] Redirecting to Home");

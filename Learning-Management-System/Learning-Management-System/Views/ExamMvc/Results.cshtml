@@ -47,63 +47,77 @@
     </div>
 
     <div class="row">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-plus-circle"></i> Add New Result
-                    </h5>
-                </div>
-                <div class="card-body">
-                    @if (TempData["Message"] != null)
-                    {
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            @TempData["Message"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+        @if (User.IsInRole("Teacher"))
+        {
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-plus-circle"></i> Add New Result
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @if (TempData["Message"] != null)
+                        {
+                            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                                @TempData["Message"]
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
 
-                    <form asp-action="AddResult" method="post">
-                        <input type="hidden" name="ExamId" value="@exam?.Id" />
+                        <form asp-action="AddResult" method="post">
+                            <input type="hidden" name="ExamId" value="@exam?.Id" />
 
-                        <div class="mb-3">
-                            <label class="form-label">
-                                <i class="bi bi-person"></i> Student
-                            </label>
-                            <select name="StudentId" class="form-select" required>
-                                <option value="">-- Select student --</option>
-                                @if (students != null)
-                                {
-                                    @foreach (var student in students)
+                            <div class="mb-3">
+                                <label class="form-label">
+                                    <i class="bi bi-person"></i> Student
+                                </label>
+                                <select name="StudentId" class="form-select" required>
+                                    <option value="">-- Select student --</option>
+                                    @if (students != null)
                                     {
-                                        <option value="@student.Id">@student.FullName (@student.Email)</option>
+                                        @foreach (var student in students)
+                                        {
+                                            <option value="@student.Id">@student.FullName (@student.Email)</option>
+                                        }
                                     }
-                                }
-                            </select>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-6 mb-3">
-                                <label class="form-label">
-                                    <i class="bi bi-trophy"></i> Marks
-                                </label>
-                                <input name="Marks" type="number" min="0" max="@exam?.MaxScore" class="form-control" required placeholder="0" />
+                                </select>
                             </div>
-                            <div class="col-6 mb-3">
-                                <label class="form-label">
-                                    <i class="bi bi-star"></i> Grade
-                                </label>
-                                <input name="Grade" type="text" class="form-control" maxlength="10" placeholder="A+/A/B" />
-                            </div>
-                        </div>
 
-                        <button type="submit" class="btn btn-success w-100">
-                            <i class="bi bi-check-circle"></i> Save Result
-                        </button>
-                    </form>
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-trophy"></i> Marks
+                                    </label>
+                                    <input name="Marks" type="number" min="0" max="@exam?.MaxScore" class="form-control" required placeholder="0" />
+                                </div>
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">
+                                        <i class="bi bi-star"></i> Grade
+                                    </label>
+                                    <input name="Grade" type="text" class="form-control" maxlength="10" placeholder="A+/A/B" />
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check-circle"></i> Save Result
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
+        else
+        {
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body text-center text-muted">
+                        <i class="bi bi-lock" style="font-size: 2rem;"></i>
+                        <p class="mt-3 mb-0">Only teachers can enter exam results.</p>
+                    </div>
+                </div>
+            </div>
+        }
 
         <div class="col-md-8">
             <div class="card">

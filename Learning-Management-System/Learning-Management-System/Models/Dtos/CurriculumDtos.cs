@@ -296,6 +296,8 @@ public class ExamDto
     public string CreatedById { get; set; } = string.Empty;
     public string CreatedByName { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    // Whether the current user is enrolled (set by the MVC controller when rendering)
+    public bool IsEnrolled { get; set; } = false;
 }
 
 public class CreateExamResultDto
@@ -439,5 +441,16 @@ public class AssignmentGradeDto
     public string GradedById { get; set; } = string.Empty;
     public string GradedByName { get; set; } = string.Empty;
     public DateTime? GradedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public class ExamRegistrationDto
+{
+    public long Id { get; set; }
+    public long ExamId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string SubjectName { get; set; } = string.Empty;
+    public DateTime ExamDate { get; set; }
+    public string Status { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
 }
