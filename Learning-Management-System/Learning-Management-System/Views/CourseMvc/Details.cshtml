@@ -1,0 +1,207 @@
+@{
+    ViewData["Title"] = "Course Details";
+    var userRole = ViewBag.UserRole as string ?? "Student";
+    var courseId = ViewBag.CourseId;
+    var courseJson = ViewBag.CourseJson as string ?? "{}";
+    var subjectsJson = ViewBag.SubjectsJson as string ?? "[]";
+    var batchesJson = ViewBag.BatchesJson as string ?? "[]";
+    bool canManage = userRole == "Teacher" || userRole == "CourseCoordinator" || userRole == "Admin";
+    bool canDelete = userRole == "CourseCoordinator" || userRole == "Admin";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
+        <li class="breadcrumb-item active">Course Details</li>
+    </ol>
+</nav>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div id="courseDetail"></div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span>📘 Subjects</span>
+                @if (canManage)
+                {
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">+ Add Subject</button>
+                }
+            </div>
+            <div class="card-body p-0" id="subjectsContainer">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+                <span>👥 Batches</span>
+                @if (canManage)
+                {
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addBatchModal">+ Add Batch</button>
+                }
+            </div>
+            <div class="card-body p-0" id="batchesContainer">
+                <div class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (canManage)
+{
+    <!-- Add Subject Modal -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Subject</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" asp-action="AddSubject">
+                    <div class="modal-body">
+                        <input type="hidden" name="courseId" value="@courseId" />
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Subject Name *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="e.g., Data Structures" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="2" placeholder="Brief description"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Subject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Batch Modal -->
+    <div class="modal fade" id="addBatchModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Batch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="post" asp-action="AddBatch">
+                    <div class="modal-body">
+                        <input type="hidden" name="courseId" value="@courseId" />
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Batch Name *</label>
+                            <input type="text" name="batchName" class="form-control" required placeholder="e.g., Batch 2026-A" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Start Date *</label>
+                            <input type="date" name="startDate" class="form-control" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">End Date *</label>
+                            <input type="date" name="endDate" class="form-control" required />
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Add Batch</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    const course = @Html.Raw(courseJson);
+    const subjects = @Html.Raw(subjectsJson);
+    const batches = @Html.Raw(batchesJson);
+    const canManage = @Html.Raw(canManage.ToString().ToLower());
+    const canDelete = @Html.Raw(canDelete.ToString().ToLower());
+
+    // Render course header
+    document.getElementById('courseDetail').innerHTML = `
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge bg-success mb-2">${course.status || 'ACTIVE'}</span>
+                        <h3 class="fw-bold">${course.title || 'Course'}</h3>
+                        <p class="text-muted">${course.description || ''}</p>
+                        <div class="d-flex gap-4 text-muted small">
+                            <span>📊 <strong>${course.credits || 0}</strong> Credits</span>
+                            <span>📘 <strong>${course.subjectCount || 0}</strong> Subjects</span>
+                            <span>👥 <strong>${course.batchCount || 0}</strong> Batches</span>
+                            ${course.createdByName ? `<span>👤 By <strong>${course.createdByName}</strong></span>` : ''}
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        ${canManage ? `<a href="/CourseMvc/Edit/${course.id}" class="btn btn-outline-primary btn-sm">Edit</a>` : ''}
+                        ${canDelete ? `<form method="post" action="/CourseMvc/Delete/${course.id}" onsubmit="return confirm('Delete this course?')">
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                        </form>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+    const canAssignTeacher = @Html.Raw((userRole == "Admin" || userRole == "CourseCoordinator").ToString().ToLower());
+
+    // Render subjects
+    const subjectsEl = document.getElementById('subjectsContainer');
+    if (subjects && subjects.length > 0) {
+        subjectsEl.innerHTML = `<ul class="list-group list-group-flush">` +
+            subjects.map(s => `<li class="list-group-item px-4 py-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fw-semibold">${s.name}</div>
+                        ${s.description ? `<div class="text-muted small">${s.description}</div>` : ''}
+                        <div class="text-muted small mt-1">
+                            ${s.teacherCount || 0} teacher(s) assigned
+                        </div>
+                    </div>
+                    ${canAssignTeacher ? `<a href="/SubjectTeacherMvc/Index?subjectId=${s.id}" class="btn btn-outline-secondary btn-sm">👨‍🏫 Teachers</a>` : ''}
+                </div>
+                <div class="mt-2 d-flex gap-2 flex-wrap">
+                    <a href="/AssignmentMvc/Index?subjectId=${s.id}" class="btn btn-outline-primary btn-sm py-0 px-2">📝 Assignments</a>
+                    <a href="/AttendanceMvc/Index?subjectId=${s.id}" class="btn btn-outline-success btn-sm py-0 px-2">✅ Attendance</a>
+                    <a href="/ExamMvc/Index?subjectId=${s.id}" class="btn btn-outline-warning btn-sm py-0 px-2 text-dark">📊 Exams</a>
+                </div>
+            </li>`).join('') + `</ul>`;
+    } else {
+        subjectsEl.innerHTML = `<p class="text-center text-muted py-4">No subjects added yet</p>`;
+    }
+
+    // Render batches
+    const batchesEl = document.getElementById('batchesContainer');
+    if (batches && batches.length > 0) {
+        batchesEl.innerHTML = `<ul class="list-group list-group-flush">` +
+            batches.map(b => `<li class="list-group-item px-4 py-3">
+                <div class="fw-semibold">${b.batchName}</div>
+                <div class="text-muted small">
+                    ${b.startDate ? new Date(b.startDate).toLocaleDateString() : ''} –
+                    ${b.endDate ? new Date(b.endDate).toLocaleDateString() : ''}
+                    &nbsp;|&nbsp; ${b.enrollmentCount || 0} students
+                </div>
+                <div class="mt-1">
+                    <a href="/EnrollmentMvc/Index?batchId=${b.id}" class="btn btn-outline-primary btn-sm py-0">Manage Enrollment</a>
+                    <a href="/AttendanceMvc/Index?batchId=${b.id}" class="btn btn-outline-secondary btn-sm py-0 ms-1">Attendance</a>
+                </div>
+            </li>`).join('') + `</ul>`;
+    } else {
+        batchesEl.innerHTML = `<p class="text-center text-muted py-4">No batches created yet</p>`;
+    }
+</script>
+}

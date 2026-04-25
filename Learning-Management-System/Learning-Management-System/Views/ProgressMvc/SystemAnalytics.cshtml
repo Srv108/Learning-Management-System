@@ -1,0 +1,102 @@
+@{
+    ViewData["Title"] = "System Analytics";
+    var analyticsJson = ViewBag.AnalyticsJson as string ?? "null";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📊 System-Wide Analytics</h4>
+        <p class="text-muted mb-0">Platform-wide student performance overview</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Analytics" class="btn btn-outline-primary btn-sm">Course Analytics</a>
+        <a asp-action="AtRisk" class="btn btn-outline-danger btn-sm">At-Risk Students</a>
+    </div>
+</div>
+
+<div id="analyticsContainer">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="text-muted mt-2">Loading analytics...</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+const data = @Html.Raw(analyticsJson);
+const container = document.getElementById('analyticsContainer');
+
+if (!data || (Array.isArray(data) && data.length === 0)) {
+    container.innerHTML = `
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="fs-1 mb-2">📊</div>
+                <h5 class="text-muted">No analytics data available</h5>
+                <p class="text-muted small">Analytics data appears after student progress has been calculated.</p>
+                <p class="text-muted small">This happens automatically when attendance is marked, assignments are graded, and exam results are recorded.</p>
+            </div>
+        </div>`;
+    return;
+}
+
+// If data is an array of student progress records
+const records = Array.isArray(data) ? data : (data.students || []);
+const totalStudents = records.length;
+const avgAttendance = totalStudents > 0 ? records.reduce((s, r) => s + (r.attendancePercentage || 0), 0) / totalStudents : 0;
+const avgExam = totalStudents > 0 ? records.reduce((s, r) => s + (r.examAvgScore || 0), 0) / totalStudents : 0;
+const avgAssignment = totalStudents > 0 ? records.reduce((s, r) => s + (r.assignmentAvgScore || 0), 0) / totalStudents : 0;
+const passCount = records.filter(r => r.overallGrade && r.overallGrade !== 'F').length;
+
+container.innerHTML = `
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="text-muted small mb-1">Total Records</div>
+                <div class="fw-bold fs-3">${totalStudents}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="text-muted small mb-1">Avg Attendance</div>
+                <div class="fw-bold fs-3" style="color:${avgAttendance>=75?'#059669':'#dc2626'}">${avgAttendance.toFixed(1)}%</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="text-muted small mb-1">Avg Exam Score</div>
+                <div class="fw-bold fs-3" style="color:${avgExam>=50?'#059669':'#dc2626'}">${avgExam.toFixed(1)}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="text-muted small mb-1">Passing</div>
+                <div class="fw-bold fs-3 text-success">${passCount} / ${totalStudents}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white fw-semibold py-3">Student Progress Records</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Student</th><th>Course</th><th>Attendance</th><th>Assignment</th><th>Exam</th><th>Grade</th></tr>
+                    </thead>
+                    <tbody>
+                        ${records.map(r => `
+                            <tr>
+                                <td class="fw-semibold">${r.studentName || r.studentId || '-'}</td>
+                                <td class="text-muted small">${r.courseName || '-'}</td>
+                                <td><span class="badge ${(r.attendancePercentage||0)>=75?'bg-success':'bg-danger'}">${(r.attendancePercentage||0).toFixed(1)}%</span></td>
+                                <td>${(r.assignmentAvgScore||0).toFixed(1)}</td>
+                                <td><span class="badge ${(r.examAvgScore||0)>=50?'bg-success':'bg-danger'}">${(r.examAvgScore||0).toFixed(1)}</span></td>
+                                <td><span class="badge bg-secondary">${r.overallGrade||'N/A'}</span></td>
+                            </tr>`).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>`;
+</script>
+}

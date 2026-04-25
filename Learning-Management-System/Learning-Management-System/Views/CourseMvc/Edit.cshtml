@@ -1,0 +1,73 @@
+@{
+    ViewData["Title"] = "Edit Course";
+    var courseId = ViewBag.CourseId;
+    var courseJson = ViewBag.CourseJson as string ?? "{}";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
+        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Details" asp-route-id="@courseId">Details</a></li>
+        <li class="breadcrumb-item active">Edit</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0">✏️ Edit Course</h5>
+            </div>
+            <div class="card-body p-4">
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        { <div>@error.ErrorMessage</div> }
+                    </div>
+                }
+                <form method="post" asp-action="Edit" asp-route-id="@courseId" id="editForm">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Course Title *</label>
+                        <input type="text" name="title" id="fTitle" class="form-control" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" id="fDesc" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Credits *</label>
+                        <input type="number" name="credits" id="fCredits" class="form-control" min="1" max="10" required />
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select name="status" id="fStatus" class="form-select">
+                            <option value="ACTIVE">Active</option>
+                            <option value="INACTIVE">Inactive</option>
+                            <option value="ARCHIVED">Archived</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                        <a asp-action="Details" asp-route-id="@courseId" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const c = @Html.Raw(courseJson);
+    document.getElementById('fTitle').value = c.title || '';
+    document.getElementById('fDesc').value = c.description || '';
+    document.getElementById('fCredits').value = c.credits || 3;
+    const statusEl = document.getElementById('fStatus');
+    if (statusEl) {
+        for (let opt of statusEl.options) {
+            if (opt.value === (c.status || 'ACTIVE')) opt.selected = true;
+        }
+    }
+</script>
+}

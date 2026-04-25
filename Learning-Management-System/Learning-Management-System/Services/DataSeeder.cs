@@ -502,40 +502,47 @@ namespace Learning_Management_System.Services
             var courses = await _context.Courses.ToListAsync();
             var enrollments = await _context.Enrollments.Include(e => e.Batch).ToListAsync();
 
+            // Deduplicate by StudentId + CourseId to avoid unique constraint violations
+            var existingProgress = await _context.StudentCourseProgress
+                .Select(p => new { p.StudentId, p.CourseId })
+                .ToListAsync();
+            var existingSet = existingProgress.Select(p => $"{p.StudentId}_{p.CourseId}").ToHashSet();
+
+            var seen = new HashSet<string>();
             foreach (var enrollment in enrollments)
             {
                 var course = courses.FirstOrDefault(c => c.Id == enrollment.Batch.CourseId);
-                if (course != null)
+                if (course == null) continue;
+
+                var key = $"{enrollment.StudentId}_{course.Id}";
+                if (seen.Contains(key) || existingSet.Contains(key)) continue;
+                seen.Add(key);
+
+                var attendancePercentage = Random.Shared.Next(55, 100);
+                var assignmentScore = Random.Shared.Next(55, 98);
+                var examScore = Random.Shared.Next(50, 98);
+                var overallScore = (attendancePercentage * 0.2) + (assignmentScore * 0.3) + (examScore * 0.5);
+                var overallGrade = overallScore switch
                 {
-                    var attendancePercentage = Random.Shared.Next(20, 100);
-                    var assignmentScore = Random.Shared.Next(50, 95);
-                    var examScore = Random.Shared.Next(50, 95);
+                    >= 90 => "A+",
+                    >= 80 => "A",
+                    >= 70 => "B",
+                    >= 60 => "C",
+                    >= 50 => "D",
+                    _ => "F"
+                };
 
-                    // Calculate overall grade based on weighted average
-                    var overallScore = (attendancePercentage * 0.2) + (assignmentScore * 0.3) + (examScore * 0.5);
-                    var overallGrade = overallScore switch
-                    {
-                        >= 90 => "A+",
-                        >= 80 => "A",
-                        >= 70 => "B",
-                        >= 60 => "C",
-                        >= 50 => "D",
-                        _ => "F"
-                    };
-
-                    var progress = new StudentCourseProgress
-                    {
-                        StudentId = enrollment.StudentId,
-                        CourseId = course.Id,
-                        AttendancePercentage = new decimal(attendancePercentage),
-                        AssignmentAvgScore = new decimal(assignmentScore),
-                        ExamAvgScore = new decimal(examScore),
-                        OverallGrade = overallGrade,
-                        LastUpdated = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow
-                    };
-                    _context.StudentCourseProgress.Add(progress);
-                }
+                _context.StudentCourseProgress.Add(new StudentCourseProgress
+                {
+                    StudentId = enrollment.StudentId,
+                    CourseId = course.Id,
+                    AttendancePercentage = new decimal(attendancePercentage),
+                    AssignmentAvgScore = new decimal(assignmentScore),
+                    ExamAvgScore = new decimal(examScore),
+                    OverallGrade = overallGrade,
+                    LastUpdated = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
 
             await _context.SaveChangesAsync();

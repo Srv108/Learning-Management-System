@@ -1,0 +1,120 @@
+@{
+    ViewData["Title"] = "Exams";
+    var userRole = ViewBag.UserRole as string ?? "Teacher";
+    var examsJson = ViewBag.ExamsJson as string ?? "[]";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+    bool canManage = userRole == "Teacher" || userRole == "CourseCoordinator" || userRole == "ExamController" || userRole == "Admin";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📊 Exam Management</h4>
+        <p class="text-muted mb-0">Schedule and manage exams</p>
+    </div>
+    @if (canManage)
+    {
+        <div class="d-flex gap-2">
+            <a asp-action="Create" class="btn btn-primary">+ Schedule Exam</a>
+            <a asp-action="RecordResults" class="btn btn-outline-primary">Record Results</a>
+        </div>
+    }
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Course</label>
+                <select class="form-select form-select-sm" id="courseFilter"><option value="">Select Course</option></select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Subject</label>
+                <select class="form-select form-select-sm" id="subjectFilter"><option value="">Select Course First</option></select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary btn-sm w-100" onclick="filterExams()">Load</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="examsList"></div>
+
+@section Scripts {
+<script>
+    const courses = @Html.Raw(coursesJson);
+    const initialExams = @Html.Raw(examsJson);
+    const canManage = @Html.Raw(canManage.ToString().ToLower());
+
+    const courseFilter = document.getElementById('courseFilter');
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.title;
+        courseFilter.appendChild(opt);
+    });
+
+    courseFilter.addEventListener('change', async function() {
+        const sel = document.getElementById('subjectFilter');
+        sel.innerHTML = '<option value="">Loading...</option>';
+        if (!this.value) { sel.innerHTML = '<option value="">Select Course First</option>'; return; }
+        const res = await fetch(`/api/subject/course/${this.value}`);
+        const subs = await res.json();
+        sel.innerHTML = '<option value="">Select Subject</option>';
+        subs.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id; opt.textContent = s.name;
+            sel.appendChild(opt);
+        });
+    });
+
+    function filterExams() {
+        const subId = document.getElementById('subjectFilter').value;
+        if (!subId) { alert('Please select a subject'); return; }
+        window.location.href = `/ExamMvc/Index?subjectId=${subId}`;
+    }
+
+    function renderExams(exams) {
+        const container = document.getElementById('examsList');
+        if (!exams || exams.length === 0) {
+            container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+                <div class="fs-1">📊</div><h5 class="text-muted">No exams found</h5>
+                <p class="text-muted">Select a subject to see its exams</p>
+            </div></div>`;
+            return;
+        }
+
+        container.innerHTML = `<div class="row g-4">` +
+            exams.map(e => `
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge ${e.examType === 'FINAL' ? 'bg-danger' : 'bg-warning text-dark'}">${e.examType}</span>
+                                <small class="text-muted">Max: ${e.maxScore}</small>
+                            </div>
+                            <h5 class="fw-semibold mb-1">${e.title}</h5>
+                            <p class="text-muted small mb-1">📘 ${e.subjectName}</p>
+                            <p class="text-muted small mb-3">📅 ${new Date(e.examDate).toLocaleDateString()}</p>
+                            <div class="d-flex gap-2 flex-wrap">
+                                ${canManage ? `
+                                    <a href="/ExamMvc/RecordResults?examId=${e.id}" class="btn btn-sm btn-primary">Results</a>
+                                    <form method="post" action="/ExamMvc/DeleteExam" style="display:inline" onsubmit="return confirm('Delete exam?')">
+                                        <input type="hidden" name="id" value="${e.id}" />
+                                        <input type="hidden" name="subjectId" value="${e.subjectId}" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>`).join('') + `</div>`;
+    }
+
+    renderExams(initialExams);
+</script>
+}

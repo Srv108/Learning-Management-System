@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 
@@ -14,6 +16,31 @@ namespace Learning_Management_System.Controllers
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+        }
+
+        private static void StoreSessionFromToken(ISession session, string token, string email)
+        {
+            session.SetString("JwtToken", token);
+            session.SetString("UserEmail", email);
+            try
+            {
+                var handler = new JwtSecurityTokenHandler();
+                var jwt = handler.ReadJwtToken(token);
+                var role = jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                        ?? jwt.Claims.FirstOrDefault(c => c.Type == "role")?.Value
+                        ?? "Student";
+                var userId = jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value ?? "";
+                var fullName = jwt.Claims.FirstOrDefault(c => c.Type == "fullName")?.Value ?? email;
+                session.SetString("UserRole", role);
+                session.SetString("UserId", userId);
+                session.SetString("UserFullName", fullName);
+            }
+            catch
+            {
+                session.SetString("UserRole", "Student");
+                session.SetString("UserId", "");
+                session.SetString("UserFullName", email);
+            }
         }
 
         [AllowAnonymous]
@@ -83,8 +110,7 @@ namespace Learning_Management_System.Controllers
                     if (succeeded && !string.IsNullOrEmpty(token))
                     {
                         Console.WriteLine($"[REGISTER] Registration successful, setting session");
-                        HttpContext.Session.SetString("JwtToken", token);
-                        HttpContext.Session.SetString("UserEmail", model.Email);
+                        StoreSessionFromToken(HttpContext.Session, token, model.Email);
                         return RedirectToAction("Index", "Home");
                     }
                 }
@@ -177,8 +203,7 @@ namespace Learning_Management_System.Controllers
                         if (succeeded && !string.IsNullOrEmpty(token))
                         {
                             Console.WriteLine($"[LOGIN] Setting session with user data");
-                            HttpContext.Session.SetString("JwtToken", token);
-                            HttpContext.Session.SetString("UserEmail", model.Email);
+                            StoreSessionFromToken(HttpContext.Session, token, model.Email);
                             Console.WriteLine($"[LOGIN] Session set - UserEmail: {model.Email}");
 
                             Console.WriteLine($"[LOGIN] Redirecting to Home");
@@ -227,6 +252,9 @@ namespace Learning_Management_System.Controllers
         {
             HttpContext.Session.Remove("JwtToken");
             HttpContext.Session.Remove("UserEmail");
+            HttpContext.Session.Remove("UserRole");
+            HttpContext.Session.Remove("UserId");
+            HttpContext.Session.Remove("UserFullName");
             Console.WriteLine("[LOGOUT] User logged out, session cleared");
             return RedirectToAction("Login");
         }

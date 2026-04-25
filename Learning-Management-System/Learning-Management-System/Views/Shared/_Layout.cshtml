@@ -1,86 +1,261 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Learning_Management_System</title>
+    <title>@ViewData["Title"] - LMS</title>
     <script type="importmap"></script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Learning_Management_System.styles.css" asp-append-version="true" />
+    <style>
+        :root {
+            --lms-primary: #4f46e5;
+            --lms-secondary: #7c3aed;
+            --lms-success: #059669;
+            --lms-danger: #dc2626;
+            --lms-sidebar: #1e1b4b;
+        }
+        body { background: #f1f5f9; min-height: 100vh; }
+        .navbar-lms {
+            background: linear-gradient(135deg, var(--lms-primary) 0%, var(--lms-secondary) 100%);
+            box-shadow: 0 2px 10px rgba(79,70,229,0.3);
+        }
+        .navbar-lms .navbar-brand, .navbar-lms .nav-link { color: #fff !important; }
+        .navbar-lms .nav-link:hover { color: #e0e7ff !important; }
+        .navbar-lms .nav-link.active { color: #c7d2fe !important; font-weight: 600; }
+        .dropdown-menu { border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-radius: 10px; }
+        .dropdown-item:hover { background: #ede9fe; color: var(--lms-primary); }
+        .badge-role {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .role-student { background: #dbeafe; color: #1d4ed8; }
+        .role-teacher { background: #d1fae5; color: #065f46; }
+        .role-coordinator { background: #fef3c7; color: #92400e; }
+        .role-examcontroller { background: #fce7f3; color: #9d174d; }
+        .role-admin { background: #fee2e2; color: #991b1b; }
+        .main-content { padding: 24px; }
+        footer { background: #1e1b4b; color: #a5b4fc; padding: 14px 0; margin-top: 40px; }
+        footer a { color: #c7d2fe; }
+        .sidebar-nav { border-right: 1px solid #e2e8f0; min-height: calc(100vh - 60px); background: #fff; padding: 20px 0; }
+        .sidebar-nav .nav-link { color: #475569; padding: 10px 20px; border-radius: 8px; margin: 2px 8px; }
+        .sidebar-nav .nav-link:hover { background: #ede9fe; color: var(--lms-primary); }
+        .sidebar-nav .nav-link.active { background: var(--lms-primary); color: #fff; }
+        .sidebar-nav .nav-section { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; padding: 12px 20px 4px; letter-spacing: 1px; }
+        .toast-container { z-index: 9999; }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
-                    📚 Learning Management System
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <ul class="navbar-nav">
-                        @{
-                            var userEmail = Context.Session.GetString("UserEmail");
-                            var jwtToken = Context.Session.GetString("JwtToken");
-                        }
-                        @if (!string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken))
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link text-dark">
-                                    👤 @userEmail
-                                </span>
-                            </li>
-                            <li class="nav-item">
-                                <form method="post" asp-action="Logout" asp-controller="AuthMvc" style="display: inline;">
-                                    <button type="submit" class="btn btn-outline-danger btn-sm ms-2">
-                                        🚪 Logout
-                                    </button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="btn btn-primary btn-sm ms-2" asp-area="" asp-controller="AuthMvc" asp-action="Login">
-                                    🔐 Login
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="btn btn-outline-primary btn-sm ms-2" asp-area="" asp-controller="AuthMvc" asp-action="Register">
-                                    ✍️ Register
-                                </a>
-                            </li>
-                        }
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+@{
+    var userEmail = Context.Session.GetString("UserEmail");
+    var jwtToken = Context.Session.GetString("JwtToken");
+    var userRole = Context.Session.GetString("UserRole") ?? "Guest";
+    var userFullName = Context.Session.GetString("UserFullName") ?? userEmail ?? "Guest";
+    var isAuthenticated = !string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken);
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Learning_Management_System - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    bool IsStudent() => userRole == "Student";
+    bool IsTeacher() => userRole == "Teacher";
+    bool IsCoordinator() => userRole == "CourseCoordinator";
+    bool IsExamController() => userRole == "ExamController";
+    bool IsAdmin() => userRole == "Admin";
+    bool CanManageCourse() => IsTeacher() || IsCoordinator() || IsAdmin();
+    bool CanManageExam() => IsExamController() || IsCoordinator() || IsAdmin() || IsTeacher();
+    bool CanViewAnalytics() => IsTeacher() || IsCoordinator() || IsAdmin() || IsExamController();
+
+    string RoleBadgeClass() => userRole switch {
+        "Student" => "role-student",
+        "Teacher" => "role-teacher",
+        "CourseCoordinator" => "role-coordinator",
+        "ExamController" => "role-examcontroller",
+        "Admin" => "role-admin",
+        _ => "role-student"
+    };
+}
+<header>
+    <nav class="navbar navbar-expand-lg navbar-lms">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
+                📚 LMS
+            </a>
+            <button class="navbar-toggler border-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarMain">
+                @if (isAuthenticated)
+                {
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">🏠 Dashboard</a>
+                        </li>
+
+                        <!-- Courses - visible to all -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">📚 Courses</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-controller="CourseMvc" asp-action="Index">Browse Courses</a></li>
+                                @if (CanManageCourse())
+                                {
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-controller="CourseMvc" asp-action="Create">+ Create Course</a></li>
+                                }
+                                @if (IsCoordinator() || IsAdmin())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="AdminMvc" asp-action="Users">👥 User Management</a></li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Enrollment -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">📋 Enrollment</a>
+                            <ul class="dropdown-menu">
+                                @if (IsStudent())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="EnrollmentMvc" asp-action="MyEnrollments">My Enrollments</a></li>
+                                }
+                                @if (IsCoordinator() || IsAdmin())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="EnrollmentMvc" asp-action="Index">Manage Enrollments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="EnrollmentMvc" asp-action="Enroll">Enroll Student</a></li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Attendance -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">✅ Attendance</a>
+                            <ul class="dropdown-menu">
+                                @if (IsStudent())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="AttendanceMvc" asp-action="MyAttendance">My Attendance</a></li>
+                                }
+                                @if (CanManageCourse())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="AttendanceMvc" asp-action="Index">Attendance Sessions</a></li>
+                                    <li><a class="dropdown-item" asp-controller="AttendanceMvc" asp-action="CreateSession">Create Session</a></li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Assignments -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">📝 Assignments</a>
+                            <ul class="dropdown-menu">
+                                @if (IsStudent())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="AssignmentMvc" asp-action="MyAssignments">My Assignments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="AssignmentMvc" asp-action="MyGrades">My Grades</a></li>
+                                }
+                                @if (CanManageCourse())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="AssignmentMvc" asp-action="Index">All Assignments</a></li>
+                                    <li><a class="dropdown-item" asp-controller="AssignmentMvc" asp-action="Create">Create Assignment</a></li>
+                                    <li><a class="dropdown-item" asp-controller="AssignmentMvc" asp-action="Submissions">Grade Submissions</a></li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Exams -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">📊 Exams</a>
+                            <ul class="dropdown-menu">
+                                @if (IsStudent())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="ExamMvc" asp-action="MyResults">My Results</a></li>
+                                }
+                                @if (CanManageExam())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="ExamMvc" asp-action="Index">All Exams</a></li>
+                                    <li><a class="dropdown-item" asp-controller="ExamMvc" asp-action="Create">Schedule Exam</a></li>
+                                    <li><a class="dropdown-item" asp-controller="ExamMvc" asp-action="RecordResults">Record Results</a></li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Analytics / Progress -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">📈 Progress</a>
+                            <ul class="dropdown-menu">
+                                @if (IsStudent())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="ProgressMvc" asp-action="MyProgress">My Progress</a></li>
+                                }
+                                @if (CanViewAnalytics())
+                                {
+                                    <li><a class="dropdown-item" asp-controller="ProgressMvc" asp-action="Analytics">Course Analytics</a></li>
+                                    <li><a class="dropdown-item" asp-controller="ProgressMvc" asp-action="AtRisk">At-Risk Students</a></li>
+                                }
+                            </ul>
+                        </li>
+
+                        <!-- Admin only -->
+                        @if (IsAdmin())
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">⚙️ Admin</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="AdminMvc" asp-action="Users">👥 User Management</a></li>
+                                    <li><a class="dropdown-item" asp-controller="AdminMvc" asp-action="AssignRole">🔑 Assign Roles</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-controller="ProgressMvc" asp-action="SystemAnalytics">📊 System Analytics</a></li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav ms-auto align-items-center">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" data-bs-toggle="dropdown">
+                                <span class="rounded-circle bg-white text-primary fw-bold d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:0.85rem">
+                                    @(userFullName.Length > 0 ? userFullName[0].ToString().ToUpper() : "U")
+                                </span>
+                                <span class="d-none d-md-inline">@userFullName</span>
+                                <span class="badge-role @RoleBadgeClass() d-none d-lg-inline">@userRole</span>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><span class="dropdown-item-text text-muted small">@userEmail</span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form method="post" asp-action="Logout" asp-controller="AuthMvc">
+                                        <button type="submit" class="dropdown-item text-danger">🚪 Logout</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                }
+                else
+                {
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="btn btn-light btn-sm ms-2" asp-controller="AuthMvc" asp-action="Login">🔐 Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm ms-2" asp-controller="AuthMvc" asp-action="Register">✍️ Register</a>
+                        </li>
+                    </ul>
+                }
+            </div>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    </nav>
+</header>
+
+<div class="main-content">
+    @RenderBody()
+</div>
+
+<footer>
+    <div class="container text-center">
+        <small>&copy; 2026 Learning Management System &mdash; Role: <strong>@userRole</strong></small>
+    </div>
+</footer>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

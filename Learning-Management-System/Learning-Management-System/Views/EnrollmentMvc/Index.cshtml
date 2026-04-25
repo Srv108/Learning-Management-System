@@ -1,0 +1,152 @@
+@{
+    ViewData["Title"] = "Manage Enrollments";
+    var userRole = ViewBag.UserRole as string ?? "CourseCoordinator";
+    var enrollmentsJson = ViewBag.EnrollmentsJson as string ?? "[]";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+    var batchId = ViewBag.BatchId;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📋 Enrollment Management</h4>
+        <p class="text-muted mb-0">Manage student enrollments in course batches</p>
+    </div>
+    <a asp-action="Enroll" class="btn btn-primary">+ Enroll Student</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<!-- Filter Panel -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Filter by Course</label>
+                <select class="form-select form-select-sm" id="courseFilter">
+                    <option value="">Select Course</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Filter by Batch</label>
+                <select class="form-select form-select-sm" id="batchFilter">
+                    <option value="">Select Batch</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary btn-sm w-100" onclick="loadEnrollments()">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0" id="enrollmentsTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>Student</th>
+                        <th>Email</th>
+                        <th>Batch</th>
+                        <th>Status</th>
+                        <th>Enrolled On</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="enrollmentsBody">
+                    <tr><td colspan="6" class="text-center py-4 text-muted">Select a batch to view enrollments</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const allCourses = @Html.Raw(coursesJson);
+    const initialEnrollments = @Html.Raw(enrollmentsJson);
+    const initialBatchId = @Html.Raw(batchId?.ToString() ?? "null");
+
+    // Populate courses dropdown
+    const courseFilter = document.getElementById('courseFilter');
+    if (allCourses && allCourses.length) {
+        allCourses.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = c.title;
+            courseFilter.appendChild(opt);
+        });
+    }
+
+    courseFilter.addEventListener('change', async function() {
+        const cid = this.value;
+        const batchSel = document.getElementById('batchFilter');
+        batchSel.innerHTML = '<option value="">Select Batch</option>';
+        if (!cid) return;
+
+        const res = await fetch(`/api/coursebatch/course/${cid}`);
+        if (res.ok) {
+            const batches = await res.json();
+            batches.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = b.batchName;
+                batchSel.appendChild(opt);
+            });
+        }
+    });
+
+    async function loadEnrollments() {
+        const batchId = document.getElementById('batchFilter').value;
+        if (!batchId) { alert('Please select a batch'); return; }
+        window.location.href = `/EnrollmentMvc/Index?batchId=${batchId}`;
+    }
+
+    function renderEnrollments(enrollments) {
+        const tbody = document.getElementById('enrollmentsBody');
+        if (!enrollments || enrollments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No enrollments found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = enrollments.map(e => `
+            <tr>
+                <td class="fw-semibold">${e.studentName || '-'}</td>
+                <td class="text-muted small">${e.studentEmail || '-'}</td>
+                <td>${e.batchName || '-'}</td>
+                <td><span class="badge ${e.status === 'ACTIVE' ? 'bg-success' : e.status === 'SUSPENDED' ? 'bg-warning' : 'bg-secondary'}">${e.status}</span></td>
+                <td class="small text-muted">${e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString() : e.createdAt ? new Date(e.createdAt).toLocaleDateString() : '-'}</td>
+                <td>
+                    <form method="post" action="/EnrollmentMvc/UpdateStatus" class="d-inline">
+                        <input type="hidden" name="id" value="${e.id}" />
+                        <input type="hidden" name="batchId" value="${e.batchId}" />
+                        <select name="status" class="form-select form-select-sm d-inline w-auto" onchange="this.form.submit()">
+                            <option value="ACTIVE" ${e.status === 'ACTIVE' ? 'selected' : ''}>Active</option>
+                            <option value="SUSPENDED" ${e.status === 'SUSPENDED' ? 'selected' : ''}>Suspended</option>
+                            <option value="COMPLETED" ${e.status === 'COMPLETED' ? 'selected' : ''}>Completed</option>
+                            <option value="DROPPED" ${e.status === 'DROPPED' ? 'selected' : ''}>Dropped</option>
+                        </select>
+                    </form>
+                    <form method="post" action="/EnrollmentMvc/Delete" class="d-inline ms-1" onsubmit="return confirm('Remove enrollment?')">
+                        <input type="hidden" name="id" value="${e.id}" />
+                        <input type="hidden" name="batchId" value="${e.batchId}" />
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                    </form>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    renderEnrollments(initialEnrollments);
+    if (initialBatchId) {
+        document.getElementById('batchFilter').value = initialBatchId;
+    }
+</script>
+}

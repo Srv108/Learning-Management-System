@@ -1,113 +1,375 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-    var userEmail = ViewBag.UserEmail as string ?? "Guest";
+@{
+    ViewData["Title"] = "Dashboard";
+    var userRole = ViewBag.UserRole as string ?? "Student";
+    var userFullName = ViewBag.UserFullName as string ?? "User";
+    var userId = ViewBag.UserId as string ?? "";
+
+    bool IsStudent() => userRole == "Student";
+    bool IsTeacher() => userRole == "Teacher";
+    bool IsCoordinator() => userRole == "CourseCoordinator";
+    bool IsExamController() => userRole == "ExamController";
+    bool IsAdmin() => userRole == "Admin";
 }
 
-<div class="container mt-5">
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                <h4 class="alert-heading">👋 Welcome, @userEmail!</h4>
-                <p class="mb-0">
-                    You're now connected to the Learning Management System. Navigate through the menu to access courses, assignments, grades, and more.
-                </p>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </div>
+<div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">Welcome back, @userFullName! 👋</h4>
+        <p class="text-muted mb-0">
+            @{
+                var roleDesc = userRole switch {
+                    "Student" => "Track your learning journey, assignments, and exam results.",
+                    "Teacher" => "Manage your courses, assignments, and student attendance.",
+                    "CourseCoordinator" => "Oversee enrollments, course batches, and curriculum.",
+                    "ExamController" => "Schedule exams and record student results.",
+                    "Admin" => "Full system access — manage users, courses, and all modules.",
+                    _ => "Learning Management System"
+                };
+            }
+            @roleDesc
+        </p>
     </div>
-
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">📚 My Courses</h5>
-                    <p class="card-text">View all enrolled courses</p>
-                    <a href="#" class="btn btn-primary btn-sm">Go to Courses</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">📊 Performance</h5>
-                    <p class="card-text">Check your grades and analytics</p>
-                    <a href="#" class="btn btn-primary btn-sm">View Progress</a>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-body text-center">
-                    <h5 class="card-title">📝 Assignments</h5>
-                    <p class="card-text">Submit and track assignments</p>
-                    <a href="#" class="btn btn-primary btn-sm">View Assignments</a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mt-5">
-        <div class="col-md-12">
-            <h3>System Status</h3>
-            <div class="table-responsive">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Feature</th>
-                            <th>Status</th>
-                            <th>Details</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>🔐 Authentication</td>
-                            <td><span class="badge bg-success">Active</span></td>
-                            <td>JWT + Cookie-based auth enabled</td>
-                        </tr>
-                        <tr>
-                            <td>📊 Analytics API</td>
-                            <td><span class="badge bg-success">Ready</span></td>
-                            <td>9 power-packed analytics endpoints</td>
-                        </tr>
-                        <tr>
-                            <td>🗄️ Database</td>
-                            <td><span class="badge bg-success">Connected</span></td>
-                            <td>SQL Server integration active</td>
-                        </tr>
-                        <tr>
-                            <td>📚 Seed Data</td>
-                            <td><span class="badge bg-warning">Partial</span></td>
-                            <td>37 users, 6 courses loaded</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+    <span class="badge fs-6 px-3 py-2" style="background:#ede9fe;color:#4f46e5;">@userRole</span>
 </div>
 
+@* Student Dashboard *@
+@if (IsStudent())
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-2">📚</div>
+                        <h5 class="fw-semibold">Browse Courses</h5>
+                        <p class="text-muted small">View all available courses</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="EnrollmentMvc" asp-action="MyEnrollments" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-2">📋</div>
+                        <h5 class="fw-semibold">My Enrollments</h5>
+                        <p class="text-muted small">View your enrolled courses & batches</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="AttendanceMvc" asp-action="MyAttendance" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-2">✅</div>
+                        <h5 class="fw-semibold">My Attendance</h5>
+                        <p class="text-muted small">Check your attendance records</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="AssignmentMvc" asp-action="MyAssignments" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-2">📝</div>
+                        <h5 class="fw-semibold">My Assignments</h5>
+                        <p class="text-muted small">Submit and track your assignments</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ExamMvc" asp-action="MyResults" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-2">🎯</div>
+                        <h5 class="fw-semibold">My Exam Results</h5>
+                        <p class="text-muted small">View your exam scores and grades</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ProgressMvc" asp-action="MyProgress" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card">
+                    <div class="card-body text-center py-4">
+                        <div class="fs-1 mb-2">📈</div>
+                        <h5 class="fw-semibold">My Progress</h5>
+                        <p class="text-muted small">Performance analytics & reports</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+}
+
+@* Teacher Dashboard *@
+@if (IsTeacher())
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #4f46e5!important">
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-2">📚</div>
+                            <div>
+                                <h6 class="fw-semibold mb-1">Courses</h6>
+                                <p class="text-muted small mb-0">Browse & manage courses</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="CourseMvc" asp-action="Create" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #059669!important">
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-2">➕</div>
+                            <div>
+                                <h6 class="fw-semibold mb-1">Create Course</h6>
+                                <p class="text-muted small mb-0">Add a new course</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="AttendanceMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #d97706!important">
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-2">✅</div>
+                            <div>
+                                <h6 class="fw-semibold mb-1">Attendance</h6>
+                                <p class="text-muted small mb-0">Mark & manage sessions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="AssignmentMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #7c3aed!important">
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-2">📝</div>
+                            <div>
+                                <h6 class="fw-semibold mb-1">Assignments</h6>
+                                <p class="text-muted small mb-0">Create & grade assignments</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #dc2626!important">
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-2">📊</div>
+                            <div>
+                                <h6 class="fw-semibold mb-1">Exams</h6>
+                                <p class="text-muted small mb-0">Schedule & record results</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #0891b2!important">
+                    <div class="card-body py-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="fs-2">📈</div>
+                            <div>
+                                <h6 class="fw-semibold mb-1">Analytics</h6>
+                                <p class="text-muted small mb-0">Student progress reports</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+}
+
+@* CourseCoordinator Dashboard *@
+@if (IsCoordinator())
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📚</div><h6 class="fw-semibold">Courses</h6><p class="text-muted small mb-0">Manage curriculum</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="EnrollmentMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📋</div><h6 class="fw-semibold">Enrollments</h6><p class="text-muted small mb-0">Manage student enrollment</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="AttendanceMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">✅</div><h6 class="fw-semibold">Attendance</h6><p class="text-muted small mb-0">Track attendance</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="AssignmentMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📝</div><h6 class="fw-semibold">Assignments</h6><p class="text-muted small mb-0">Manage assignments</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📊</div><h6 class="fw-semibold">Exams</h6><p class="text-muted small mb-0">Schedule exams</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📈</div><h6 class="fw-semibold">Analytics</h6><p class="text-muted small mb-0">Performance reports</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="ProgressMvc" asp-action="AtRisk" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">⚠️</div><h6 class="fw-semibold">At-Risk Students</h6><p class="text-muted small mb-0">Low attendance/grades</p>
+                </div>
+            </a>
+        </div>
+    </div>
+}
+
+@* ExamController Dashboard *@
+@if (IsExamController())
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📚</div><h6 class="fw-semibold">Courses & Subjects</h6><p class="text-muted small">Browse for exam scheduling</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📊</div><h6 class="fw-semibold">All Exams</h6><p class="text-muted small">View scheduled exams</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ExamMvc" asp-action="Create" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">➕</div><h6 class="fw-semibold">Schedule Exam</h6><p class="text-muted small">Create new exam</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ExamMvc" asp-action="RecordResults" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📋</div><h6 class="fw-semibold">Record Results</h6><p class="text-muted small">Enter exam scores</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-4">
+            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
+                    <div class="fs-1 mb-2">📈</div><h6 class="fw-semibold">Analytics</h6><p class="text-muted small">Student performance</p>
+                </div>
+            </a>
+        </div>
+    </div>
+}
+
+@* Admin Dashboard *@
+@if (IsAdmin())
+{
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <a asp-controller="AdminMvc" asp-action="Users" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #dc2626!important">
+                    <div class="fs-1 mb-2">👥</div><h6 class="fw-semibold">User Management</h6><p class="text-muted small">Manage all users</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #4f46e5!important">
+                    <div class="fs-1 mb-2">📚</div><h6 class="fw-semibold">Courses</h6><p class="text-muted small">Manage all courses</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="EnrollmentMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #059669!important">
+                    <div class="fs-1 mb-2">📋</div><h6 class="fw-semibold">Enrollments</h6><p class="text-muted small">Manage enrollments</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="AttendanceMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #d97706!important">
+                    <div class="fs-1 mb-2">✅</div><h6 class="fw-semibold">Attendance</h6><p class="text-muted small">Track attendance</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="AssignmentMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #7c3aed!important">
+                    <div class="fs-1 mb-2">📝</div><h6 class="fw-semibold">Assignments</h6><p class="text-muted small">Manage assignments</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #dc2626!important">
+                    <div class="fs-1 mb-2">📊</div><h6 class="fw-semibold">Exams</h6><p class="text-muted small">Manage exams</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #0891b2!important">
+                    <div class="fs-1 mb-2">📈</div><h6 class="fw-semibold">Analytics</h6><p class="text-muted small">Performance reports</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a asp-controller="ProgressMvc" asp-action="AtRisk" class="text-decoration-none">
+                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #f59e0b!important">
+                    <div class="fs-1 mb-2">⚠️</div><h6 class="fw-semibold">At-Risk Students</h6><p class="text-muted small">Intervention needed</p>
+                </div>
+            </a>
+        </div>
+    </div>
+}
+
 <style>
-    .card {
-        border: none;
-        border-radius: 8px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2) !important;
-    }
-
-    .table {
-        background-color: #fff;
-        border-radius: 8px;
-    }
-
-    .badge {
-        font-size: 0.85em;
-        padding: 0.5em 0.75em;
-    }
+.dashboard-card {
+    border-radius: 12px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+.dashboard-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(79,70,229,0.15) !important;
+}
 </style>
-

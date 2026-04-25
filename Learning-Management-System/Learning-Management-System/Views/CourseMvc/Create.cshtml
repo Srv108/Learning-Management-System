@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Create Course";
+    var userRole = ViewBag.UserRole as string ?? "Student";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
+        <li class="breadcrumb-item active">Create Course</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0">📚 Create New Course</h5>
+            </div>
+            <div class="card-body p-4">
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                }
+                <form method="post" asp-action="Create">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Course Title *</label>
+                        <input type="text" name="title" class="form-control" required placeholder="e.g., Introduction to Computer Science" maxlength="150" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Description</label>
+                        <textarea name="description" class="form-control" rows="4" placeholder="Describe what this course covers..."></textarea>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Credits *</label>
+                        <input type="number" name="credits" class="form-control" required min="1" max="10" value="3" />
+                        <div class="form-text">Usually between 1 and 6 credits</div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Create Course</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

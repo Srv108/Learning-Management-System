@@ -1,19 +1,15 @@
-@model ErrorViewModel
 @{
-    ViewData["Title"] = "Error";
+    ViewData["Title"] = "Page Not Found";
 }
 
 <div class="row justify-content-center mt-5">
     <div class="col-md-6 text-center">
         <div class="card border-0 shadow-sm py-5">
             <div class="card-body">
-                <div style="font-size:5rem">⚠️</div>
-                <h2 class="fw-bold text-danger mt-3">Something went wrong</h2>
-                <p class="text-muted">An unexpected error occurred while processing your request.</p>
-                @if (Model?.ShowRequestId == true)
-                {
-                    <p class="text-muted small">Request ID: <code>@Model.RequestId</code></p>
-                }
+                <div style="font-size:5rem">🔍</div>
+                <h1 class="fw-bold text-muted" style="font-size:5rem">404</h1>
+                <h4 class="fw-semibold mt-2">Page Not Found</h4>
+                <p class="text-muted">The page you're looking for doesn't exist or has been moved.</p>
                 <div class="d-flex gap-2 justify-content-center mt-4">
                     <a href="javascript:history.back()" class="btn btn-outline-secondary">← Go Back</a>
                     <a asp-controller="Home" asp-action="Index" class="btn btn-primary">🏠 Dashboard</a>

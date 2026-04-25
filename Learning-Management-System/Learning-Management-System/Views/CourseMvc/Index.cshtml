@@ -1,0 +1,87 @@
+@{
+    ViewData["Title"] = "Courses";
+    var userRole = ViewBag.UserRole as string ?? "Student";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+    bool canManage = userRole == "Teacher" || userRole == "CourseCoordinator" || userRole == "Admin";
+    bool canDelete = userRole == "CourseCoordinator" || userRole == "Admin";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📚 All Courses</h4>
+        <p class="text-muted mb-0">Browse available courses in the system</p>
+    </div>
+    @if (canManage)
+    {
+        <a asp-action="Create" class="btn btn-primary">+ Create Course</a>
+    }
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div id="coursesContainer" class="row g-4">
+    <div class="col-12 text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="text-muted mt-2">Loading courses...</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const coursesJson = @Html.Raw(coursesJson);
+    const canManage = @Html.Raw(canManage.ToString().ToLower());
+    const canDelete = @Html.Raw(canDelete.ToString().ToLower());
+
+    function renderCourses(courses) {
+        const container = document.getElementById('coursesContainer');
+        if (!courses || courses.length === 0) {
+            container.innerHTML = `<div class="col-12 text-center py-5">
+                <div class="fs-1">📚</div>
+                <h5 class="text-muted">No courses found</h5>
+            </div>`;
+            return;
+        }
+
+        container.innerHTML = courses.map(c => `
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm h-100" style="border-radius:12px;transition:transform .2s,box-shadow .2s"
+                     onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(79,70,229,.15)'"
+                     onmouseout="this.style.transform='';this.style.boxShadow=''">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-success">${c.status || 'ACTIVE'}</span>
+                            <small class="text-muted">${c.credits || 0} credits</small>
+                        </div>
+                        <h5 class="fw-semibold mb-2">${c.title || 'Untitled'}</h5>
+                        <p class="text-muted small mb-3">${(c.description || 'No description').substring(0, 100)}${(c.description||'').length > 100 ? '...' : ''}</p>
+                        <div class="d-flex gap-2 text-muted small mb-3">
+                            <span>📘 ${c.subjectCount || 0} subjects</span>
+                            <span>👥 ${c.batchCount || 0} batches</span>
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a href="/CourseMvc/Details/${c.id}" class="btn btn-primary btn-sm">View Details</a>
+                            ${canManage ? `<a href="/CourseMvc/Edit/${c.id}" class="btn btn-outline-secondary btn-sm">Edit</a>` : ''}
+                            ${canDelete ? `<form method="post" action="/CourseMvc/Delete/${c.id}" style="display:inline" onsubmit="return confirm('Delete this course?')">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                            </form>` : ''}
+                        </div>
+                    </div>
+                    ${c.createdByName ? `<div class="card-footer bg-transparent border-top-0 small text-muted px-4 pb-3">by ${c.createdByName}</div>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    renderCourses(coursesJson);
+</script>
+}

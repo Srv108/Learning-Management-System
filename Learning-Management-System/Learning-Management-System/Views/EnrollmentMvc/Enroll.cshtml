@@ -1,0 +1,91 @@
+@{
+    ViewData["Title"] = "Enroll Student";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-action="Index">Enrollments</a></li>
+        <li class="breadcrumb-item active">Enroll Student</li>
+    </ol>
+</nav>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="fw-bold mb-0">📋 Enroll Student in Batch</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" asp-action="Enroll">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Student ID *</label>
+                        <input type="text" name="studentId" class="form-control" required placeholder="Enter student's user ID" />
+                        <div class="form-text">You can find student IDs in the User Management section</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Course *</label>
+                        <select class="form-select" id="courseSelect" required>
+                            <option value="">Select a course</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Batch *</label>
+                        <select class="form-select" id="batchSelect" name="batchId" required disabled>
+                            <option value="">Select a course first</option>
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary px-4">Enroll Student</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const courses = @Html.Raw(coursesJson);
+    const courseSelect = document.getElementById('courseSelect');
+    const batchSelect = document.getElementById('batchSelect');
+
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.title;
+        courseSelect.appendChild(opt);
+    });
+
+    courseSelect.addEventListener('change', async function() {
+        batchSelect.innerHTML = '<option value="">Loading...</option>';
+        batchSelect.disabled = true;
+        if (!this.value) { batchSelect.innerHTML = '<option value="">Select a course first</option>'; return; }
+
+        try {
+            const res = await fetch(`/api/coursebatch/course/${this.value}`);
+            const batches = await res.json();
+            batchSelect.innerHTML = '<option value="">Select a batch</option>';
+            batches.forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = `${b.batchName} (${b.enrollmentCount} enrolled)`;
+                batchSelect.appendChild(opt);
+            });
+            batchSelect.disabled = false;
+        } catch {
+            batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+        }
+    });
+</script>
+}

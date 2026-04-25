@@ -1,0 +1,117 @@
+@{
+    ViewData["Title"] = "Assignments";
+    var userRole = ViewBag.UserRole as string ?? "Teacher";
+    var assignmentsJson = ViewBag.AssignmentsJson as string ?? "[]";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📝 Assignment Management</h4>
+        <p class="text-muted mb-0">Create and manage assignments</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">+ Create Assignment</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<!-- Filter Panel -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Course</label>
+                <select class="form-select form-select-sm" id="courseFilter">
+                    <option value="">Select Course</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Subject</label>
+                <select class="form-select form-select-sm" id="subjectFilter">
+                    <option value="">Select Course First</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary btn-sm w-100" onclick="filterAssignments()">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="assignmentsList"></div>
+
+@section Scripts {
+<script>
+    const courses = @Html.Raw(coursesJson);
+    const initialAssignments = @Html.Raw(assignmentsJson);
+    const userRole = '@userRole';
+
+    const courseFilter = document.getElementById('courseFilter');
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.title;
+        courseFilter.appendChild(opt);
+    });
+
+    courseFilter.addEventListener('change', async function() {
+        const sel = document.getElementById('subjectFilter');
+        sel.innerHTML = '<option value="">Loading...</option>';
+        if (!this.value) { sel.innerHTML = '<option value="">Select Course First</option>'; return; }
+        const res = await fetch(`/api/subject/course/${this.value}`);
+        const subs = await res.json();
+        sel.innerHTML = '<option value="">Select Subject</option>';
+        subs.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id; opt.textContent = s.name;
+            sel.appendChild(opt);
+        });
+    });
+
+    function filterAssignments() {
+        const subId = document.getElementById('subjectFilter').value;
+        if (!subId) { alert('Please select a subject'); return; }
+        window.location.href = `/AssignmentMvc/Index?subjectId=${subId}`;
+    }
+
+    function renderAssignments(assignments) {
+        const container = document.getElementById('assignmentsList');
+        if (!assignments || assignments.length === 0) {
+            container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+                <div class="fs-1 mb-2">📝</div><h5 class="text-muted">No assignments found</h5>
+                <p class="text-muted">Select a subject to view its assignments</p>
+            </div></div>`;
+            return;
+        }
+
+        const now = new Date();
+        container.innerHTML = `<div class="row g-4">` +
+            assignments.map(a => {
+                const due = new Date(a.dueDate);
+                const overdue = due < now;
+                return `
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge ${overdue ? 'bg-danger' : 'bg-primary'}">${overdue ? 'Overdue' : 'Active'}</span>
+                                <small class="text-muted">Max: ${a.maxScore}</small>
+                            </div>
+                            <h5 class="fw-semibold mb-1">${a.title}</h5>
+                            <p class="text-muted small mb-2">${a.description || ''}</p>
+                            <p class="small text-muted"><strong>Due:</strong> ${due.toLocaleDateString()} ${due.toLocaleTimeString()}</p>
+                            <p class="small text-muted">📘 ${a.subjectName || ''}</p>
+                            <div class="d-flex gap-2 mt-3">
+                                <a href="/AssignmentMvc/Submissions?assignmentId=${a.id}" class="btn btn-sm btn-outline-primary">View Submissions</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') + `</div>`;
+    }
+
+    renderAssignments(initialAssignments);
+</script>
+}

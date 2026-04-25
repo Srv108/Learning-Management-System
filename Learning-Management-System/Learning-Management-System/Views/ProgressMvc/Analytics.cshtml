@@ -1,0 +1,174 @@
+@{
+    ViewData["Title"] = "Course Analytics";
+    var analyticsJson = ViewBag.AnalyticsJson as string ?? "null";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+    var courseId = ViewBag.CourseId;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">📈 Course Analytics</h4>
+        <p class="text-muted mb-0">Student performance overview per course</p>
+    </div>
+    <a asp-action="AtRisk" class="btn btn-outline-danger btn-sm">⚠️ At-Risk Students</a>
+</div>
+
+<!-- Course Selector -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold">Select Course</label>
+                <select class="form-select" id="courseSelect" onchange="if(this.value) window.location.href='/ProgressMvc/Analytics?courseId='+this.value">
+                    <option value="">Select a course...</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="analyticsContainer">
+    @if (courseId == null)
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <div class="fs-1 mb-2">📈</div>
+                <h5 class="text-muted">Select a course to view analytics</h5>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+    const courses = @Html.Raw(coursesJson);
+    const analyticsData = @Html.Raw(analyticsJson);
+    const selectedCourseId = @Html.Raw(courseId?.ToString() ?? "null");
+
+    const courseSelect = document.getElementById('courseSelect');
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.title;
+        if (c.id == selectedCourseId) opt.selected = true;
+        courseSelect.appendChild(opt);
+    });
+
+    if (analyticsData && analyticsData.summary) {
+        const s = analyticsData.summary;
+        const gd = s.gradeDistribution || {};
+        const students = analyticsData.students || [];
+
+        document.getElementById('analyticsContainer').innerHTML = `
+            <div class="row g-4 mb-4">
+                <div class="col-md-2">
+                    <div class="card border-0 shadow-sm text-center py-3">
+                        <div class="text-muted small mb-1">Total Students</div>
+                        <div class="fw-bold fs-3">${s.totalStudents || 0}</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-0 shadow-sm text-center py-3">
+                        <div class="text-muted small mb-1">Avg Attendance</div>
+                        <div class="fw-bold fs-3" style="color:${(s.averageAttendance||0)>=75?'#059669':'#dc2626'}">${(s.averageAttendance||0).toFixed(1)}%</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-0 shadow-sm text-center py-3">
+                        <div class="text-muted small mb-1">Avg Assignment</div>
+                        <div class="fw-bold fs-3 text-info">${(s.averageAssignmentScore||0).toFixed(1)}</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-0 shadow-sm text-center py-3">
+                        <div class="text-muted small mb-1">Avg Exam Score</div>
+                        <div class="fw-bold fs-3" style="color:${(s.averageExamScore||0)>=50?'#059669':'#dc2626'}">${(s.averageExamScore||0).toFixed(1)}</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-0 shadow-sm text-center py-3">
+                        <div class="text-muted small mb-1">Pass Rate</div>
+                        <div class="fw-bold fs-3" style="color:${(s.passRate||0)>=50?'#059669':'#dc2626'}">${(s.passRate||0).toFixed(1)}%</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card border-0 shadow-sm text-center py-3">
+                        <div class="text-muted small mb-1">Grade A+/A</div>
+                        <div class="fw-bold fs-3 text-success">${(gd.aPlus||0) + (gd.a||0)}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grade Distribution -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-header bg-white fw-semibold py-3">Grade Distribution</div>
+                        <div class="card-body p-4">
+                            ${renderGradeBar('A+', gd.aPlus||0, s.totalStudents||1, '#059669')}
+                            ${renderGradeBar('A', gd.a||0, s.totalStudents||1, '#10b981')}
+                            ${renderGradeBar('B', gd.b||0, s.totalStudents||1, '#0891b2')}
+                            ${renderGradeBar('C', gd.c||0, s.totalStudents||1, '#d97706')}
+                            ${renderGradeBar('D', gd.d||0, s.totalStudents||1, '#f59e0b')}
+                            ${renderGradeBar('F', gd.f||0, s.totalStudents||1, '#dc2626')}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-white fw-semibold py-3">Student Performance</div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr><th>Student</th><th>Attendance</th><th>Assignments</th><th>Exams</th><th>Grade</th></tr>
+                                    </thead>
+                                    <tbody>
+                                        ${students.map(st => `
+                                            <tr>
+                                                <td>
+                                                    <div class="fw-semibold">${st.studentName || '-'}</div>
+                                                    <div class="text-muted small">${st.email || ''}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <div class="bg-light rounded flex-grow-1" style="height:6px">
+                                                            <div style="height:100%;width:${Math.min(st.attendancePercentage||0,100)}%;background:${(st.attendancePercentage||0)>=75?'#059669':'#dc2626'};border-radius:3px"></div>
+                                                        </div>
+                                                        <small>${(st.attendancePercentage||0).toFixed(0)}%</small>
+                                                    </div>
+                                                </td>
+                                                <td>${(st.assignmentAvgScore||0).toFixed(1)}</td>
+                                                <td>${(st.examAvgScore||0).toFixed(1)}</td>
+                                                <td><span class="badge" style="background:${gradeColor(st.overallGrade)}">${st.overallGrade||'N/A'}</span></td>
+                                            </tr>`).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function renderGradeBar(grade, count, total, color) {
+        const pct = total > 0 ? (count / total * 100) : 0;
+        return `<div class="mb-2">
+            <div class="d-flex justify-content-between small mb-1">
+                <span><strong>${grade}</strong></span><span>${count} students</span>
+            </div>
+            <div class="bg-light rounded" style="height:8px">
+                <div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:4px;transition:width .5s"></div>
+            </div>
+        </div>`;
+    }
+
+    function gradeColor(g) {
+        if (!g) return '#6b7280';
+        if (g === 'A+' || g === 'A') return '#059669';
+        if (g === 'B') return '#0891b2';
+        if (g === 'C') return '#d97706';
+        return '#dc2626';
+    }
+</script>
+}

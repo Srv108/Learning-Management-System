@@ -1,0 +1,56 @@
+@{
+    ViewData["Title"] = "My Enrollments";
+    var enrollmentsJson = ViewBag.EnrollmentsJson as string ?? "[]";
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold mb-1">📋 My Enrollments</h4>
+    <p class="text-muted mb-0">Your enrolled courses and batch information</p>
+</div>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-warning">Could not load enrollments. Please try again.</div>
+}
+
+<div id="enrollmentsList"></div>
+
+@section Scripts {
+<script>
+    const enrollments = @Html.Raw(enrollmentsJson);
+
+    const container = document.getElementById('enrollmentsList');
+    if (!enrollments || enrollments.length === 0) {
+        container.innerHTML = `
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <div class="fs-1 mb-3">📋</div>
+                    <h5 class="text-muted">No enrollments found</h5>
+                    <p class="text-muted">You are not enrolled in any course batch yet.</p>
+                    <a href="/CourseMvc/Index" class="btn btn-primary">Browse Courses</a>
+                </div>
+            </div>`;
+    } else {
+        container.innerHTML = `
+            <div class="row g-4">
+                ${enrollments.map(e => `
+                    <div class="col-md-4">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="badge ${e.status === 'ACTIVE' ? 'bg-success' : e.status === 'COMPLETED' ? 'bg-primary' : 'bg-secondary'}">${e.status}</span>
+                                </div>
+                                <h5 class="fw-semibold">${e.batchName || 'Batch'}</h5>
+                                <p class="text-muted small mb-3">Enrolled: ${e.enrolledAt ? new Date(e.enrolledAt).toLocaleDateString() : new Date(e.createdAt).toLocaleDateString()}</p>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="/AttendanceMvc/MyAttendance" class="btn btn-sm btn-outline-primary">My Attendance</a>
+                                    <a href="/AssignmentMvc/MyAssignments" class="btn btn-sm btn-outline-secondary">Assignments</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>`;
+    }
+</script>
+}

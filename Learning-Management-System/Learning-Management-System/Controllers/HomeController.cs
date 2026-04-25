@@ -9,22 +9,18 @@ namespace Learning_Management_System.Controllers
     {
         public IActionResult Index()
         {
-            // Check if user logged in via session
             var userEmail = HttpContext.Session.GetString("UserEmail");
             var jwtToken = HttpContext.Session.GetString("JwtToken");
-            
-            Console.WriteLine($"[HOME] Index called");
-            Console.WriteLine($"[HOME] Session UserEmail: {userEmail}");
-            Console.WriteLine($"[HOME] Session JwtToken present: {(!string.IsNullOrEmpty(jwtToken))}");
-            
+
             if (!string.IsNullOrEmpty(userEmail) && !string.IsNullOrEmpty(jwtToken))
             {
-                Console.WriteLine($"[HOME] User is authenticated via session, rendering home view");
                 ViewBag.UserEmail = userEmail;
+                ViewBag.UserRole = HttpContext.Session.GetString("UserRole") ?? "Student";
+                ViewBag.UserFullName = HttpContext.Session.GetString("UserFullName") ?? userEmail;
+                ViewBag.UserId = HttpContext.Session.GetString("UserId") ?? "";
                 return View();
             }
-            
-            Console.WriteLine($"[HOME] User is NOT authenticated, redirecting to login");
+
             return RedirectToAction("Login", "AuthMvc");
         }
 
@@ -39,6 +35,13 @@ namespace Learning_Management_System.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        [AllowAnonymous]
+        public IActionResult NotFound()
+        {
+            Response.StatusCode = 404;
+            return View();
         }
     }
 }

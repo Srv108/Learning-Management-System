@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "My Exam Results";
+    var summaryJson = ViewBag.SummaryJson as string ?? "null";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+    var subjectId = ViewBag.SubjectId;
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold mb-1">🎯 My Exam Results</h4>
+    <p class="text-muted mb-0">View your exam scores and performance</p>
+</div>
+
+<!-- Selector -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Course</label>
+                <select class="form-select form-select-sm" id="courseSelect"><option value="">Select Course</option></select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Subject</label>
+                <select class="form-select form-select-sm" id="subjectSelect"><option value="">Select Course First</option></select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary btn-sm w-100" onclick="load()">View</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="summaryContainer"></div>
+
+@section Scripts {
+<script>
+    const courses = @Html.Raw(coursesJson);
+    const summary = @Html.Raw(summaryJson);
+
+    const courseSelect = document.getElementById('courseSelect');
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.title;
+        courseSelect.appendChild(opt);
+    });
+
+    courseSelect.addEventListener('change', async function() {
+        const sel = document.getElementById('subjectSelect');
+        sel.innerHTML = '<option value="">Loading...</option>';
+        if (!this.value) { sel.innerHTML = '<option value="">Select Course First</option>'; return; }
+        const res = await fetch(`/api/subject/course/${this.value}`);
+        const subs = await res.json();
+        sel.innerHTML = '<option value="">Select Subject</option>';
+        subs.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id; opt.textContent = s.name;
+            sel.appendChild(opt);
+        });
+    });
+
+    function load() {
+        const subId = document.getElementById('subjectSelect').value;
+        if (!subId) { alert('Please select a subject'); return; }
+        window.location.href = `/ExamMvc/MyResults?subjectId=${subId}`;
+    }
+
+    if (summary) {
+        const avg = summary.averageScore || 0;
+        const color = avg >= 70 ? '#059669' : avg >= 50 ? '#d97706' : '#dc2626';
+        const status = avg >= 70 ? 'Good' : avg >= 50 ? 'Average' : 'Needs Improvement';
+
+        document.getElementById('summaryContainer').innerHTML = `
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center py-4">
+                            <h6 class="text-muted mb-3">Average Score</h6>
+                            <div style="font-size:3rem;font-weight:700;color:${color}">${avg.toFixed(1)}</div>
+                            <span class="badge mt-2" style="background:${color}">${status}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <h6 class="fw-semibold mb-3">${summary.subjectName || 'Subject'} — Exam Summary</h6>
+                            <div class="row g-3">
+                                <div class="col-4 text-center">
+                                    <div class="fw-bold fs-3">${summary.examsTaken || 0}</div>
+                                    <div class="text-muted small">Exams Taken</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="fw-bold fs-3" style="color:${color}">${avg.toFixed(1)}</div>
+                                    <div class="text-muted small">Average Score</div>
+                                </div>
+                                <div class="col-4 text-center">
+                                    <div class="fw-bold fs-3 text-primary">${summary.bestGrade || '-'}</div>
+                                    <div class="text-muted small">Best Grade</div>
+                                </div>
+                            </div>
+                            ${avg >= 50 ? `<div class="alert alert-success mt-3 mb-0 py-2 small">✅ You are passing this subject.</div>`
+                                        : `<div class="alert alert-danger mt-3 mb-0 py-2 small">⚠️ You are below passing. Please focus on improvement.</div>`}
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+    } else {
+        document.getElementById('summaryContainer').innerHTML = `
+            <div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+                <div class="fs-1 mb-2">🎯</div>
+                <h5 class="text-muted">No results yet</h5>
+                <p class="text-muted small">Select a subject to view your exam results</p>
+            </div></div>`;
+    }
+</script>
+}

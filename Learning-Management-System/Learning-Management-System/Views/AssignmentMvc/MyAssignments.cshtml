@@ -1,0 +1,150 @@
+@{
+    ViewData["Title"] = "My Assignments";
+    var assignmentsJson = ViewBag.AssignmentsJson as string ?? "[]";
+    var coursesJson = ViewBag.CoursesJson as string ?? "[]";
+    var subjectId = ViewBag.SubjectId;
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold mb-1">📝 My Assignments</h4>
+    <p class="text-muted mb-0">Submit your assignments and track their status</p>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<!-- Filter -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body py-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Course</label>
+                <select class="form-select form-select-sm" id="courseFilter">
+                    <option value="">Select Course</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small fw-semibold">Subject</label>
+                <select class="form-select form-select-sm" id="subjectFilter">
+                    <option value="">Select Course First</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button class="btn btn-primary btn-sm w-100" onclick="filterAssignments()">Load</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="assignmentsList"></div>
+
+<!-- Submit Modal -->
+<div class="modal fade" id="submitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title">Submit Assignment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" asp-action="Submit">
+                <div class="modal-body">
+                    <input type="hidden" name="assignmentId" id="submitAssignmentId" />
+                    <p class="fw-semibold" id="submitAssignmentTitle"></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Submission URL (optional)</label>
+                        <input type="url" name="fileUrl" class="form-control" placeholder="https://... (link to your work)" />
+                        <div class="form-text">Paste a link to your document, GitHub repo, etc.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const courses = @Html.Raw(coursesJson);
+    const initialAssignments = @Html.Raw(assignmentsJson);
+
+    const courseFilter = document.getElementById('courseFilter');
+    courses.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id; opt.textContent = c.title;
+        courseFilter.appendChild(opt);
+    });
+
+    courseFilter.addEventListener('change', async function() {
+        const sel = document.getElementById('subjectFilter');
+        sel.innerHTML = '<option value="">Loading...</option>';
+        if (!this.value) { sel.innerHTML = '<option value="">Select Course First</option>'; return; }
+        const res = await fetch(`/api/subject/course/${this.value}`);
+        const subs = await res.json();
+        sel.innerHTML = '<option value="">Select Subject</option>';
+        subs.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id; opt.textContent = s.name;
+            sel.appendChild(opt);
+        });
+    });
+
+    function filterAssignments() {
+        const subId = document.getElementById('subjectFilter').value;
+        if (!subId) { alert('Please select a subject'); return; }
+        window.location.href = `/AssignmentMvc/MyAssignments?subjectId=${subId}`;
+    }
+
+    function openSubmitModal(assignmentId, title) {
+        document.getElementById('submitAssignmentId').value = assignmentId;
+        document.getElementById('submitAssignmentTitle').textContent = title;
+        new bootstrap.Modal(document.getElementById('submitModal')).show();
+    }
+
+    function renderAssignments(assignments) {
+        const container = document.getElementById('assignmentsList');
+        if (!assignments || assignments.length === 0) {
+            container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+                <div class="fs-1 mb-2">📝</div><h5 class="text-muted">No assignments found</h5>
+                <p class="text-muted small">Select a subject to see its assignments</p>
+            </div></div>`;
+            return;
+        }
+
+        const now = new Date();
+        container.innerHTML = `<div class="row g-4">` +
+            assignments.map(a => {
+                const due = new Date(a.dueDate);
+                const overdue = due < now;
+                return `<div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="badge ${overdue ? 'bg-danger' : 'bg-primary'}">${overdue ? 'Overdue' : 'Active'}</span>
+                                <small class="text-muted">Max: ${a.maxScore} pts</small>
+                            </div>
+                            <h5 class="fw-semibold mb-1">${a.title}</h5>
+                            <p class="text-muted small mb-2">${a.description || ''}</p>
+                            <p class="small mb-3"><strong class="text-${overdue ? 'danger' : 'dark'}">Due:</strong>
+                                ${due.toLocaleDateString()} ${due.toLocaleTimeString()}</p>
+                            <button class="btn btn-primary btn-sm w-100"
+                                    onclick="openSubmitModal(${a.id}, '${a.title?.replace("'","\\'")}')">
+                                Submit Assignment
+                            </button>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('') + `</div>`;
+    }
+
+    renderAssignments(initialAssignments);
+</script>
+}

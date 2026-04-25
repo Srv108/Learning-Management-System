@@ -1,0 +1,140 @@
+@{
+    ViewData["Title"] = "Manage Subject Teachers";
+    var teachersJson = ViewBag.TeachersJson as string ?? "[]";
+    var subjectJson = ViewBag.SubjectJson as string ?? "{}";
+    var allTeachersJson = ViewBag.AllTeachersJson as string ?? "[]";
+    var subjectId = ViewBag.SubjectId;
+    var userRole = ViewBag.UserRole as string ?? "";
+}
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
+        <li class="breadcrumb-item"><span id="courseLink">Course</span></li>
+        <li class="breadcrumb-item active">Subject Teachers</li>
+    </ol>
+</nav>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold mb-1">👨‍🏫 Subject Teacher Assignment</h4>
+        <p class="text-muted mb-0" id="subjectTitle">Loading subject...</p>
+    </div>
+    <a asp-controller="CourseMvc" asp-action="Index" class="btn btn-outline-secondary btn-sm">← Back to Courses</a>
+</div>
+
+<div class="row g-4">
+    <!-- Current Teachers -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0">Assigned Teachers</h6>
+                <span class="badge bg-primary" id="teacherCount">0</span>
+            </div>
+            <div class="card-body p-0" id="teacherList">
+                <div class="text-center py-5 text-muted">
+                    <div class="fs-1">👨‍🏫</div>
+                    <p>No teachers assigned yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Teacher -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="fw-bold mb-0">Assign Teacher</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" asp-action="Assign">
+                    <input type="hidden" name="subjectId" value="@subjectId" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Select Teacher</label>
+                        <select name="teacherId" class="form-select" id="teacherSelect" required>
+                            <option value="">Choose a teacher...</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Assign Teacher</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-body">
+                <h6 class="fw-semibold mb-2">Subject Info</h6>
+                <div id="subjectInfo" class="text-muted small">Loading...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const teachers = @Html.Raw(teachersJson);
+    const subject = @Html.Raw(subjectJson);
+    const allTeachers = @Html.Raw(allTeachersJson);
+    const subjectId = @Html.Raw(subjectId?.ToString() ?? "0");
+
+    // Subject info
+    if (subject && subject.name) {
+        document.getElementById('subjectTitle').textContent = subject.name + (subject.courseName ? ' — ' + subject.courseName : '');
+        document.getElementById('subjectInfo').innerHTML = `
+            <div><strong>Subject:</strong> ${subject.name}</div>
+            <div><strong>Course:</strong> ${subject.courseName || '-'}</div>
+            <div class="mt-1 text-muted">${subject.description || 'No description.'}</div>
+        `;
+        // Update breadcrumb
+        if (subject.courseId) {
+            document.getElementById('courseLink').innerHTML = `<a href="/CourseMvc/Details/${subject.courseId}">${subject.courseName || 'Course'}</a>`;
+        }
+    }
+
+    // Populate teacher dropdown
+    const sel = document.getElementById('teacherSelect');
+    const assignedIds = new Set((teachers || []).map(t => t.teacherId));
+    allTeachers.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name + ' (' + t.email + ')';
+        if (assignedIds.has(t.id)) opt.disabled = true, opt.textContent += ' ✓ assigned';
+        sel.appendChild(opt);
+    });
+
+    // Render teacher list
+    const listEl = document.getElementById('teacherList');
+    document.getElementById('teacherCount').textContent = (teachers || []).length;
+
+    if (!teachers || teachers.length === 0) {
+        listEl.innerHTML = `<div class="text-center py-5 text-muted"><div class="fs-1 mb-2">👨‍🏫</div><p>No teachers assigned yet.</p></div>`;
+    } else {
+        listEl.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
+            <thead class="table-light"><tr><th>Teacher</th><th>Email</th><th>Assigned</th><th></th></tr></thead>
+            <tbody>
+                ${teachers.map(t => `
+                    <tr>
+                        <td><div class="fw-semibold">${t.teacherName || '-'}</div></td>
+                        <td><small class="text-muted">${t.teacherEmail || ''}</small></td>
+                        <td><small class="text-muted">${t.assignedAt ? new Date(t.assignedAt).toLocaleDateString() : '-'}</small></td>
+                        <td>
+                            <form method="post" action="/SubjectTeacherMvc/Remove" onsubmit="return confirm('Remove this teacher?')">
+                                <input type="hidden" name="id" value="${t.id}" />
+                                <input type="hidden" name="subjectId" value="${subjectId}" />
+                                <button class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>`).join('')}
+            </tbody>
+        </table></div>`;
+    }
+</script>
+}

@@ -37,8 +37,13 @@ builder.Services.AddSession(options =>
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwtSettings["Secret"]!);
 
-// Simple auth: JWT for API endpoints only
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+// JWT for API endpoints — explicitly override Identity's cookie defaults
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -148,6 +153,17 @@ else
     app.UseHsts();
 }
 
+// Only redirect 404s to NotFound page for MVC routes (not API routes)
+app.UseStatusCodePages(async ctx => {
+    var response = ctx.HttpContext.Response;
+    var path = ctx.HttpContext.Request.Path.Value ?? "";
+    if (response.StatusCode == 404 && !path.StartsWith("/api", StringComparison.OrdinalIgnoreCase)
+        && !path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase))
+    {
+        ctx.HttpContext.Response.Redirect("/Home/NotFound");
+    }
+});
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseSession();
@@ -166,10 +182,19 @@ app.MapControllerRoute(
 
 app.MapControllers();
 
-// Catch-all route for invalid URLs - redirect to login page
+// Catch-all route for invalid URLs - redirect to login for MVC, 404 for API
 app.MapFallback(async context =>
 {
-    context.Response.Redirect("/AuthMvc/Login", permanent: false);
+    var path = context.Request.Path.Value ?? "";
+    if (path.StartsWith("/api", StringComparison.OrdinalIgnoreCase))
+    {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsJsonAsync(new { error = "Endpoint not found" });
+    }
+    else
+    {
+        context.Response.Redirect("/AuthMvc/Login", permanent: false);
+    }
 });
 
 app.Run();

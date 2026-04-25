@@ -1,0 +1,124 @@
+@{
+    ViewData["Title"] = "My Progress";
+    var progressJson = ViewBag.ProgressJson as string ?? "null";
+}
+
+<div class="mb-4">
+    <h4 class="fw-bold mb-1">📈 My Academic Progress</h4>
+    <p class="text-muted mb-0">Overview of your performance across all enrolled courses</p>
+</div>
+
+<div id="progressContainer">
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary"></div>
+        <p class="text-muted mt-2">Loading your progress...</p>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const data = @Html.Raw(progressJson);
+    const container = document.getElementById('progressContainer');
+
+    if (!data || (Array.isArray(data) && data.length === 0) || (data.message && !data.overall)) {
+        container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
+            <div class="fs-1 mb-2">📈</div>
+            <h5 class="text-muted">No progress data yet</h5>
+            <p class="text-muted small">Your progress will appear here once you are enrolled and have activity recorded.</p>
+            <p class="text-muted small">If you are enrolled, ask your coordinator to recalculate your progress.</p>
+        </div></div>`;
+        return;
+    }
+
+    const overall = data.overall || {};
+    const courses = data.courses || [];
+
+    const gradeColor = (g) => {
+        if (!g) return '#6b7280';
+        if (g === 'A+' || g === 'A') return '#059669';
+        if (g === 'B') return '#0891b2';
+        if (g === 'C') return '#d97706';
+        if (g === 'D') return '#f59e0b';
+        return '#dc2626';
+    };
+
+    container.innerHTML = `
+        <!-- Overall Stats -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-4">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Courses Enrolled</div>
+                        <div class="fw-bold" style="font-size:2.5rem;color:#4f46e5">${overall.totalCourses || 0}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-4">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Avg Attendance</div>
+                        <div class="fw-bold" style="font-size:2.5rem;color:${(overall.averageAttendance||0) >= 75 ? '#059669' : '#dc2626'}">${(overall.averageAttendance||0).toFixed(1)}%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-4">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Avg Assignment Score</div>
+                        <div class="fw-bold" style="font-size:2.5rem;color:#0891b2">${(overall.averageAssignmentScore||0).toFixed(1)}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm text-center py-4">
+                    <div class="card-body">
+                        <div class="text-muted small mb-1">Avg Exam Score</div>
+                        <div class="fw-bold" style="font-size:2.5rem;color:${(overall.averageExamScore||0) >= 50 ? '#059669' : '#dc2626'}">${(overall.averageExamScore||0).toFixed(1)}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Per-Course Progress -->
+        <h5 class="fw-semibold mb-3">Course-wise Performance</h5>
+        <div class="row g-4">
+            ${courses.map(c => `
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span class="fw-semibold">${c.courseName || 'Course'}</span>
+                                <span class="badge" style="background:${gradeColor(c.overallGrade)}">${c.overallGrade || 'N/A'}</span>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Attendance</span><span>${(c.attendancePercentage||0).toFixed(1)}%</span>
+                                </div>
+                                <div class="bg-light rounded" style="height:6px">
+                                    <div style="height:100%;width:${Math.min(c.attendancePercentage||0,100)}%;background:${(c.attendancePercentage||0)>=75?'#059669':'#dc2626'};border-radius:3px"></div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Assignments</span><span>${(c.assignmentAvgScore||0).toFixed(1)}</span>
+                                </div>
+                                <div class="bg-light rounded" style="height:6px">
+                                    <div style="height:100%;width:${Math.min(c.assignmentAvgScore||0,100)}%;background:#0891b2;border-radius:3px"></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small text-muted mb-1">
+                                    <span>Exams</span><span>${(c.examAvgScore||0).toFixed(1)}</span>
+                                </div>
+                                <div class="bg-light rounded" style="height:6px">
+                                    <div style="height:100%;width:${Math.min(c.examAvgScore||0,100)}%;background:${(c.examAvgScore||0)>=50?'#059669':'#dc2626'};border-radius:3px"></div>
+                                </div>
+                            </div>
+                            <div class="small text-muted">Status: <strong>${c.status || 'N/A'}</strong></div>
+                        </div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>`;
+</script>
+}
