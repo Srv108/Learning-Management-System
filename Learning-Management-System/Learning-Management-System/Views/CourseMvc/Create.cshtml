@@ -1,51 +1,53 @@
 @{
     ViewData["Title"] = "Create Course";
-    var userRole = ViewBag.UserRole as string ?? "Student";
+    ViewData["Breadcrumb"] = "<a href='/CourseMvc/Index' style='color:var(--text-muted);text-decoration:none'>Courses</a> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <span class='current'>Create Course</span>";
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
-        <li class="breadcrumb-item active">Create Course</li>
-    </ol>
-</nav>
+<div class="page-header">
+    <div>
+        <div class="page-title">Create Course</div>
+        <div class="page-sub">Add a new course to the system</div>
+    </div>
+    <a asp-controller="CourseMvc" asp-action="Index" class="btn-lms-ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Courses
+    </a>
+</div>
 
-<div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="fw-bold mb-0">📚 Create New Course</h5>
+<div style="max-width:560px">
+    <div class="lms-card">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="lms-alert danger" style="margin-bottom:20px">
+                <div class="alert-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <div>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
             </div>
-            <div class="card-body p-4">
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div class="alert alert-danger">
-                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        {
-                            <div>@error.ErrorMessage</div>
-                        }
-                    </div>
-                }
-                <form method="post" asp-action="Create">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Course Title *</label>
-                        <input type="text" name="title" class="form-control" required placeholder="e.g., Introduction to Computer Science" maxlength="150" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Description</label>
-                        <textarea name="description" class="form-control" rows="4" placeholder="Describe what this course covers..."></textarea>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Credits *</label>
-                        <input type="number" name="credits" class="form-control" required min="1" max="10" value="3" />
-                        <div class="form-text">Usually between 1 and 6 credits</div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4">Create Course</button>
-                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
+        }
+        <form method="post" asp-action="Create" style="display:flex;flex-direction:column;gap:18px">
+            <div class="lms-form-group">
+                <label class="lms-label">Course Title <span style="color:var(--rose)">*</span></label>
+                <input type="text" name="title" class="lms-input" required placeholder="e.g., Introduction to Computer Science" maxlength="150" />
             </div>
-        </div>
+            <div class="lms-form-group">
+                <label class="lms-label">Description</label>
+                <textarea name="description" class="lms-textarea" rows="4" placeholder="Describe what this course covers..."></textarea>
+            </div>
+            <div class="lms-form-group">
+                <label class="lms-label">Credits <span style="color:var(--rose)">*</span></label>
+                <input type="number" name="credits" class="lms-input" required min="1" max="10" value="3" />
+                <span style="font-size:12px;color:var(--text-muted);margin-top:4px;display:block">Usually between 1 and 6 credits</span>
+            </div>
+            <div style="display:flex;gap:10px;padding-top:4px">
+                <button type="submit" class="btn-lms-primary">Create Course</button>
+                <a asp-action="Index" class="btn-lms-ghost">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>

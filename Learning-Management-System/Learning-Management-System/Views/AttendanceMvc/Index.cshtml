@@ -6,66 +6,53 @@
     var subjectId = ViewBag.SubjectId;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">✅ Attendance Sessions</h4>
-        <p class="text-muted mb-0">Manage and mark student attendance</p>
+        <div class="page-title">Attendance Sessions</div>
+        <div class="page-sub">Manage and mark student attendance</div>
     </div>
-    <a asp-action="CreateSession" class="btn btn-primary">+ Create Session</a>
+    <a asp-action="CreateSession" class="btn-lms-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Session
+    </a>
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<!-- Subject Filter -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Course</label>
-                <select class="form-select form-select-sm" id="courseFilter">
-                    <option value="">Select Course</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <select class="form-select form-select-sm" id="subjectFilter">
-                    <option value="">Select Subject</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="filterSessions()">Load Sessions</button>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Course</label>
+            <select class="lms-select" id="courseFilter">
+                <option value="">Select Course</option>
+            </select>
         </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Subject</label>
+            <select class="lms-select" id="subjectFilter">
+                <option value="">Select Course First</option>
+            </select>
+        </div>
+        <button class="btn-lms-primary" onclick="filterSessions()">Load Sessions</button>
     </div>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Session Date</th>
-                        <th>Subject</th>
-                        <th>Course</th>
-                        <th>Total</th>
-                        <th>Present</th>
-                        <th>Absent</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="sessionsBody">
-                    <tr><td colspan="7" class="text-center py-4 text-muted">Select a subject to view sessions</td></tr>
-                </tbody>
-            </table>
-        </div>
+<div class="lms-card" style="padding:0">
+    <div style="overflow-x:auto">
+        <table class="lms-table">
+            <thead>
+                <tr>
+                    <th>Session Date</th>
+                    <th>Subject</th>
+                    <th>Course</th>
+                    <th>Total</th>
+                    <th>Present</th>
+                    <th>Absent</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="sessionsBody">
+                <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Select a subject to view sessions</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -84,7 +71,7 @@
     courseFilter.addEventListener('change', async function() {
         const subjectSel = document.getElementById('subjectFilter');
         subjectSel.innerHTML = '<option value="">Loading...</option>';
-        if (!this.value) { subjectSel.innerHTML = '<option value="">Select Subject</option>'; return; }
+        if (!this.value) { subjectSel.innerHTML = '<option value="">Select Course First</option>'; return; }
         const res = await fetch(`/api/subject/course/${this.value}`);
         const subs = await res.json();
         subjectSel.innerHTML = '<option value="">Select Subject</option>';
@@ -104,19 +91,19 @@
     function renderSessions(sessions) {
         const tbody = document.getElementById('sessionsBody');
         if (!sessions || sessions.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No sessions found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No sessions found</td></tr>';
             return;
         }
         tbody.innerHTML = sessions.map(s => `
             <tr>
-                <td><strong>${new Date(s.sessionDate).toLocaleDateString()}</strong></td>
+                <td style="font-weight:600">${new Date(s.sessionDate).toLocaleDateString()}</td>
                 <td>${s.subjectName || '-'}</td>
-                <td>${s.courseName || '-'}</td>
+                <td style="color:var(--text-muted)">${s.courseName || '-'}</td>
                 <td>${s.totalRecords || 0}</td>
-                <td><span class="badge bg-success">${s.presentCount || 0}</span></td>
-                <td><span class="badge bg-danger">${s.absentCount || 0}</span></td>
+                <td><span class="lms-badge" style="background:var(--green-soft);color:var(--green)">${s.presentCount || 0}</span></td>
+                <td><span class="lms-badge" style="background:var(--rose-soft);color:var(--rose)">${s.absentCount || 0}</span></td>
                 <td>
-                    <a href="/AttendanceMvc/MarkAttendance?sessionId=${s.id}" class="btn btn-sm btn-primary">Mark Attendance</a>
+                    <a href="/AttendanceMvc/MarkAttendance?sessionId=${s.id}" class="btn-lms-primary btn-lms-sm">Mark Attendance</a>
                 </td>
             </tr>
         `).join('');

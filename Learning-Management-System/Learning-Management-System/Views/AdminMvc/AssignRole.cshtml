@@ -1,90 +1,73 @@
 @{
     ViewData["Title"] = "Assign Role";
+    ViewData["Breadcrumb"] = "<a href='/AdminMvc/Users' style='color:var(--text-muted);text-decoration:none'>User Management</a> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <span class='current'>Assign Role</span>";
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-action="Users">Admin</a></li>
-        <li class="breadcrumb-item active">Assign Role</li>
-    </ol>
-</nav>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="page-header">
+    <div>
+        <div class="page-title">Assign User Role</div>
+        <div class="page-sub">Grant or change a user's role in the system</div>
     </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+    <a asp-action="Users" class="btn-lms-ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Users
+    </a>
+</div>
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="fw-bold mb-0">🔑 Assign User Role</h5>
+<div style="display:grid;grid-template-columns:1fr 340px;gap:24px;max-width:860px">
+    <div class="lms-card">
+        <div class="lms-alert" style="background:var(--sky-soft);border-color:rgba(14,165,233,0.2);margin-bottom:20px">
+            <div class="alert-icon" style="color:var(--sky)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
-            <div class="card-body p-4">
-                <div class="alert alert-info small mb-4">
-                    <strong>Note:</strong> This will add the specified role to the user. Users can have multiple roles.
-                    Use this to promote students to teachers, or to create course coordinators.
-                </div>
-                <form method="post" asp-action="AssignRole">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">User Email *</label>
-                        <input type="email" name="email" class="form-control" required
-                               placeholder="user@example.com" />
-                        <div class="form-text">Enter the email address of the user to assign the role to</div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Role *</label>
-                        <select name="role" class="form-select" required>
-                            <option value="">Select a role...</option>
-                            <option value="Student">Student</option>
-                            <option value="Teacher">Teacher</option>
-                            <option value="CourseCoordinator">Course Coordinator</option>
-                            <option value="ExamController">Exam Controller</option>
-                            <option value="Admin">Admin</option>
-                        </select>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4">Assign Role</button>
-                        <a asp-action="Users" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
-            </div>
+            <div style="color:var(--sky);font-size:13px">This will add the specified role to the user. Users can have multiple roles.</div>
         </div>
+        <form method="post" asp-action="AssignRole" style="display:flex;flex-direction:column;gap:18px">
+            <div class="lms-form-group">
+                <label class="lms-label">User Email <span style="color:var(--rose)">*</span></label>
+                <input type="email" name="email" class="lms-input" required placeholder="user@example.com" />
+                <span style="font-size:12px;color:var(--text-muted);margin-top:4px;display:block">Enter the email address of the user</span>
+            </div>
+            <div class="lms-form-group">
+                <label class="lms-label">Role <span style="color:var(--rose)">*</span></label>
+                <select name="role" class="lms-select" required>
+                    <option value="">Select a role...</option>
+                    <option value="Student">Student</option>
+                    <option value="Teacher">Teacher</option>
+                    <option value="CourseCoordinator">Course Coordinator</option>
+                    <option value="ExamController">Exam Controller</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:10px;padding-top:4px">
+                <button type="submit" class="btn-lms-primary">Assign Role</button>
+                <a asp-action="Users" class="btn-lms-ghost">Cancel</a>
+            </div>
+        </form>
+    </div>
 
-        <!-- Role descriptions -->
-        <div class="card border-0 shadow-sm mt-4">
-            <div class="card-header bg-white py-3 fw-semibold">Role Descriptions</div>
-            <div class="card-body p-3">
-                <div class="d-flex align-items-start gap-2 mb-2">
-                    <span class="badge" style="background:#dbeafe;color:#1d4ed8;white-space:nowrap">Student</span>
-                    <small class="text-muted">Can view own enrollments, attendance, assignments, grades & progress</small>
-                </div>
-                <div class="d-flex align-items-start gap-2 mb-2">
-                    <span class="badge" style="background:#d1fae5;color:#065f46;white-space:nowrap">Teacher</span>
-                    <small class="text-muted">Can create courses, mark attendance, create & grade assignments, schedule exams</small>
-                </div>
-                <div class="d-flex align-items-start gap-2 mb-2">
-                    <span class="badge" style="background:#fef3c7;color:#92400e;white-space:nowrap">CourseCoordinator</span>
-                    <small class="text-muted">Can manage enrollments, all courses/batches, delete resources</small>
-                </div>
-                <div class="d-flex align-items-start gap-2 mb-2">
-                    <span class="badge" style="background:#fce7f3;color:#9d174d;white-space:nowrap">ExamController</span>
-                    <small class="text-muted">Can schedule exams and record exam results</small>
-                </div>
-                <div class="d-flex align-items-start gap-2">
-                    <span class="badge" style="background:#fee2e2;color:#991b1b;white-space:nowrap">Admin</span>
-                    <small class="text-muted">Full system access including user management and role assignment</small>
-                </div>
+    <div class="lms-card" style="height:fit-content">
+        <div style="font-weight:600;font-size:14px;margin-bottom:16px">Role Descriptions</div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+                <span class="role-chip role-student" style="flex-shrink:0">Student</span>
+                <span style="font-size:12.5px;color:var(--text-muted)">View enrollments, attendance, assignments, grades & progress</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+                <span class="role-chip role-teacher" style="flex-shrink:0">Teacher</span>
+                <span style="font-size:12.5px;color:var(--text-muted)">Create courses, mark attendance, grade assignments, schedule exams</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+                <span class="role-chip role-coordinator" style="flex-shrink:0;white-space:nowrap">Coordinator</span>
+                <span style="font-size:12.5px;color:var(--text-muted)">Manage enrollments, all courses/batches, delete resources</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+                <span class="role-chip role-examcontroller" style="flex-shrink:0;white-space:nowrap">ExamCtrl</span>
+                <span style="font-size:12.5px;color:var(--text-muted)">Schedule exams and record exam results</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px">
+                <span class="role-chip role-admin" style="flex-shrink:0">Admin</span>
+                <span style="font-size:12.5px;color:var(--text-muted)">Full system access including user management and role assignment</span>
             </div>
         </div>
     </div>

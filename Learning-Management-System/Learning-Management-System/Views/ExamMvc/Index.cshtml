@@ -6,41 +6,34 @@
     bool canManage = userRole == "Teacher" || userRole == "CourseCoordinator" || userRole == "ExamController" || userRole == "Admin";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">📊 Exam Management</h4>
-        <p class="text-muted mb-0">Schedule and manage exams</p>
+        <div class="page-title">Exam Management</div>
+        <div class="page-sub">Schedule and manage exams</div>
     </div>
     @if (canManage)
     {
-        <div class="d-flex gap-2">
-            <a asp-action="Create" class="btn btn-primary">+ Schedule Exam</a>
-            <a asp-action="RecordResults" class="btn btn-outline-primary">Record Results</a>
+        <div style="display:flex;gap:8px">
+            <a asp-action="Create" class="btn-lms-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Schedule Exam
+            </a>
+            <a asp-action="RecordResults" class="btn-lms-ghost">Record Results</a>
         </div>
     }
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<!-- Filter -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Course</label>
-                <select class="form-select form-select-sm" id="courseFilter"><option value="">Select Course</option></select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <select class="form-select form-select-sm" id="subjectFilter"><option value="">Select Course First</option></select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="filterExams()">Load</button>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Course</label>
+            <select class="lms-select" id="courseFilter"><option value="">Select Course</option></select>
         </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Subject</label>
+            <select class="lms-select" id="subjectFilter"><option value="">Select Course First</option></select>
+        </div>
+        <button class="btn-lms-primary" onclick="filterExams()">Load</button>
     </div>
 </div>
 
@@ -79,38 +72,43 @@
         window.location.href = `/ExamMvc/Index?subjectId=${subId}`;
     }
 
+    const typeStyle = t => {
+        if (t === 'FINAL') return 'background:var(--rose-soft);color:var(--rose)';
+        if (t === 'MIDTERM') return 'background:var(--amber-soft);color:var(--amber)';
+        if (t === 'QUIZ') return 'background:var(--sky-soft);color:var(--sky)';
+        return 'background:var(--bg-muted);color:var(--text-muted)';
+    };
+
     function renderExams(exams) {
         const container = document.getElementById('examsList');
         if (!exams || exams.length === 0) {
-            container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
-                <div class="fs-1">📊</div><h5 class="text-muted">No exams found</h5>
-                <p class="text-muted">Select a subject to see its exams</p>
-            </div></div>`;
+            container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No exams found</div>
+                <div style="font-size:13px;color:var(--text-muted)">Select a subject to see its exams</div>
+            </div>`;
             return;
         }
 
-        container.innerHTML = `<div class="row g-4">` +
+        container.innerHTML = `<div class="content-grid-3">` +
             exams.map(e => `
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="badge ${e.examType === 'FINAL' ? 'bg-danger' : 'bg-warning text-dark'}">${e.examType}</span>
-                                <small class="text-muted">Max: ${e.maxScore}</small>
-                            </div>
-                            <h5 class="fw-semibold mb-1">${e.title}</h5>
-                            <p class="text-muted small mb-1">📘 ${e.subjectName}</p>
-                            <p class="text-muted small mb-3">📅 ${new Date(e.examDate).toLocaleDateString()}</p>
-                            <div class="d-flex gap-2 flex-wrap">
-                                ${canManage ? `
-                                    <a href="/ExamMvc/RecordResults?examId=${e.id}" class="btn btn-sm btn-primary">Results</a>
-                                    <form method="post" action="/ExamMvc/DeleteExam" style="display:inline" onsubmit="return confirm('Delete exam?')">
-                                        <input type="hidden" name="id" value="${e.id}" />
-                                        <input type="hidden" name="subjectId" value="${e.subjectId}" />
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                                    </form>` : ''}
-                            </div>
-                        </div>
+                <div class="lms-card animate-up">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <span class="lms-badge" style="${typeStyle(e.examType)}">${e.examType}</span>
+                        <span style="font-size:12px;color:var(--text-muted)">Max: ${e.maxScore}</span>
+                    </div>
+                    <div style="font-weight:700;font-size:15px;margin-bottom:6px">${e.title}</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:4px">${e.subjectName}</div>
+                    <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:16px">${new Date(e.examDate).toLocaleDateString()}</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        ${canManage ? `
+                            <a href="/ExamMvc/RecordResults?examId=${e.id}" class="btn-lms-primary btn-lms-sm">Results</a>
+                            <a href="/ExamMvc/Edit/${e.id}" class="btn-lms-ghost btn-lms-sm">Edit</a>
+                            <form method="post" action="/ExamMvc/DeleteExam" style="display:inline" onsubmit="return confirm('Delete exam?')">
+                                <input type="hidden" name="id" value="${e.id}" />
+                                <input type="hidden" name="subjectId" value="${e.subjectId}" />
+                                <button type="submit" class="btn-lms-danger btn-lms-sm">Delete</button>
+                            </form>` : ''}
                     </div>
                 </div>`).join('') + `</div>`;
     }

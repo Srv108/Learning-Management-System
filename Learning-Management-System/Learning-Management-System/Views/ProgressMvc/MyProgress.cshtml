@@ -3,16 +3,15 @@
     var progressJson = ViewBag.ProgressJson as string ?? "null";
 }
 
-<div class="mb-4">
-    <h4 class="fw-bold mb-1">📈 My Academic Progress</h4>
-    <p class="text-muted mb-0">Overview of your performance across all enrolled courses</p>
+<div class="page-header">
+    <div>
+        <div class="page-title">My Academic Progress</div>
+        <div class="page-sub">Overview of your performance across all enrolled courses</div>
+    </div>
 </div>
 
 <div id="progressContainer">
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary"></div>
-        <p class="text-muted mt-2">Loading your progress...</p>
-    </div>
+    <div style="text-align:center;padding:48px;color:var(--text-muted)">Loading your progress...</div>
 </div>
 
 @section Scripts {
@@ -21,12 +20,11 @@
     const container = document.getElementById('progressContainer');
 
     if (!data || (Array.isArray(data) && data.length === 0) || (data.message && !data.overall)) {
-        container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
-            <div class="fs-1 mb-2">📈</div>
-            <h5 class="text-muted">No progress data yet</h5>
-            <p class="text-muted small">Your progress will appear here once you are enrolled and have activity recorded.</p>
-            <p class="text-muted small">If you are enrolled, ask your coordinator to recalculate your progress.</p>
-        </div></div>`;
+        container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <div style="font-weight:600;color:var(--text-dim);margin-bottom:8px">No progress data yet</div>
+            <div style="font-size:13px;color:var(--text-muted)">Your progress will appear here once you are enrolled and have activity recorded.</div>
+        </div>`;
         return;
     }
 
@@ -34,89 +32,75 @@
     const courses = data.courses || [];
 
     const gradeColor = (g) => {
-        if (!g) return '#6b7280';
-        if (g === 'A+' || g === 'A') return '#059669';
-        if (g === 'B') return '#0891b2';
-        if (g === 'C') return '#d97706';
-        if (g === 'D') return '#f59e0b';
-        return '#dc2626';
+        if (!g) return 'var(--text-muted)';
+        if (g === 'A+' || g === 'A') return 'var(--green)';
+        if (g === 'B') return 'var(--sky)';
+        if (g === 'C' || g === 'D') return 'var(--amber)';
+        return 'var(--rose)';
+    };
+    const gradeStyle = g => {
+        if (!g) return 'background:var(--bg-muted);color:var(--text-muted)';
+        if (g === 'A+' || g === 'A') return 'background:var(--green-soft);color:var(--green)';
+        if (g === 'B') return 'background:var(--sky-soft);color:var(--sky)';
+        if (g === 'C' || g === 'D') return 'background:var(--amber-soft);color:var(--amber)';
+        return 'background:var(--rose-soft);color:var(--rose)';
     };
 
     container.innerHTML = `
-        <!-- Overall Stats -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-4">
-                    <div class="card-body">
-                        <div class="text-muted small mb-1">Courses Enrolled</div>
-                        <div class="fw-bold" style="font-size:2.5rem;color:#4f46e5">${overall.totalCourses || 0}</div>
-                    </div>
-                </div>
+        <div class="stats-grid-4" style="margin-bottom:24px">
+            <div class="stat-card">
+                <div class="stat-label">Courses Enrolled</div>
+                <div class="stat-val" style="color:var(--navy)">${overall.totalCourses || 0}</div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-4">
-                    <div class="card-body">
-                        <div class="text-muted small mb-1">Avg Attendance</div>
-                        <div class="fw-bold" style="font-size:2.5rem;color:${(overall.averageAttendance||0) >= 75 ? '#059669' : '#dc2626'}">${(overall.averageAttendance||0).toFixed(1)}%</div>
-                    </div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Attendance</div>
+                <div class="stat-val" style="color:${(overall.averageAttendance||0) >= 75 ? 'var(--green)' : 'var(--rose)'}">${(overall.averageAttendance||0).toFixed(1)}%</div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-4">
-                    <div class="card-body">
-                        <div class="text-muted small mb-1">Avg Assignment Score</div>
-                        <div class="fw-bold" style="font-size:2.5rem;color:#0891b2">${(overall.averageAssignmentScore||0).toFixed(1)}</div>
-                    </div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Assignment</div>
+                <div class="stat-val" style="color:var(--sky)">${(overall.averageAssignmentScore||0).toFixed(1)}</div>
             </div>
-            <div class="col-md-3">
-                <div class="card border-0 shadow-sm text-center py-4">
-                    <div class="card-body">
-                        <div class="text-muted small mb-1">Avg Exam Score</div>
-                        <div class="fw-bold" style="font-size:2.5rem;color:${(overall.averageExamScore||0) >= 50 ? '#059669' : '#dc2626'}">${(overall.averageExamScore||0).toFixed(1)}</div>
-                    </div>
-                </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Exam Score</div>
+                <div class="stat-val" style="color:${(overall.averageExamScore||0) >= 50 ? 'var(--green)' : 'var(--rose)'}">${(overall.averageExamScore||0).toFixed(1)}</div>
             </div>
         </div>
 
-        <!-- Per-Course Progress -->
-        <h5 class="fw-semibold mb-3">Course-wise Performance</h5>
-        <div class="row g-4">
+        <div style="font-weight:600;font-size:15px;margin-bottom:16px;color:var(--text)">Course-wise Performance</div>
+        <div class="content-grid-3">
             ${courses.map(c => `
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="fw-semibold">${c.courseName || 'Course'}</span>
-                                <span class="badge" style="background:${gradeColor(c.overallGrade)}">${c.overallGrade || 'N/A'}</span>
+                <div class="lms-card animate-up">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                        <span style="font-weight:600;font-size:14px">${c.courseName || 'Course'}</span>
+                        <span class="lms-badge" style="${gradeStyle(c.overallGrade)}">${c.overallGrade || 'N/A'}</span>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+                                <span>Attendance</span><span>${(c.attendancePercentage||0).toFixed(1)}%</span>
                             </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between small text-muted mb-1">
-                                    <span>Attendance</span><span>${(c.attendancePercentage||0).toFixed(1)}%</span>
-                                </div>
-                                <div class="bg-light rounded" style="height:6px">
-                                    <div style="height:100%;width:${Math.min(c.attendancePercentage||0,100)}%;background:${(c.attendancePercentage||0)>=75?'#059669':'#dc2626'};border-radius:3px"></div>
-                                </div>
+                            <div class="lms-progress">
+                                <div class="lms-progress-fill" style="width:${Math.min(c.attendancePercentage||0,100)}%;background:${(c.attendancePercentage||0)>=75?'var(--green)':'var(--rose)'}"></div>
                             </div>
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between small text-muted mb-1">
-                                    <span>Assignments</span><span>${(c.assignmentAvgScore||0).toFixed(1)}</span>
-                                </div>
-                                <div class="bg-light rounded" style="height:6px">
-                                    <div style="height:100%;width:${Math.min(c.assignmentAvgScore||0,100)}%;background:#0891b2;border-radius:3px"></div>
-                                </div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+                                <span>Assignments</span><span>${(c.assignmentAvgScore||0).toFixed(1)}</span>
                             </div>
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between small text-muted mb-1">
-                                    <span>Exams</span><span>${(c.examAvgScore||0).toFixed(1)}</span>
-                                </div>
-                                <div class="bg-light rounded" style="height:6px">
-                                    <div style="height:100%;width:${Math.min(c.examAvgScore||0,100)}%;background:${(c.examAvgScore||0)>=50?'#059669':'#dc2626'};border-radius:3px"></div>
-                                </div>
+                            <div class="lms-progress">
+                                <div class="lms-progress-fill" style="width:${Math.min(c.assignmentAvgScore||0,100)}%;background:var(--sky)"></div>
                             </div>
-                            <div class="small text-muted">Status: <strong>${c.status || 'N/A'}</strong></div>
+                        </div>
+                        <div>
+                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+                                <span>Exams</span><span>${(c.examAvgScore||0).toFixed(1)}</span>
+                            </div>
+                            <div class="lms-progress">
+                                <div class="lms-progress-fill" style="width:${Math.min(c.examAvgScore||0,100)}%;background:${(c.examAvgScore||0)>=50?'var(--green)':'var(--rose)'}"></div>
+                            </div>
                         </div>
                     </div>
+                    <div style="font-size:12.5px;color:var(--text-muted)">Status: <strong style="color:var(--text)">${c.status || 'N/A'}</strong></div>
                 </div>
             `).join('')}
         </div>`;

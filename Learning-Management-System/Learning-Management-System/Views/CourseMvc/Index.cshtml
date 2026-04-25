@@ -6,33 +6,24 @@
     bool canDelete = userRole == "CourseCoordinator" || userRole == "Admin";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">📚 All Courses</h4>
-        <p class="text-muted mb-0">Browse available courses in the system</p>
+        <div class="page-title">Courses</div>
+        <div class="page-sub">Browse available courses in the system</div>
     </div>
     @if (canManage)
     {
-        <a asp-action="Create" class="btn btn-primary">+ Create Course</a>
+        <a asp-action="Create" class="btn-lms-primary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create Course
+        </a>
     }
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<div id="coursesContainer" class="row g-4">
-    <div class="col-12 text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="text-muted mt-2">Loading courses...</p>
+<div id="coursesContainer" class="content-grid-3">
+    <div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text-muted)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="animation:spin 1s linear infinite;margin-bottom:8px"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.04-4.73"/></svg>
+        <div>Loading courses...</div>
     </div>
 </div>
 
@@ -45,38 +36,38 @@
     function renderCourses(courses) {
         const container = document.getElementById('coursesContainer');
         if (!courses || courses.length === 0) {
-            container.innerHTML = `<div class="col-12 text-center py-5">
-                <div class="fs-1">📚</div>
-                <h5 class="text-muted">No courses found</h5>
+            container.innerHTML = `<div style="grid-column:1/-1" class="lms-card" style="text-align:center;padding:48px">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No courses found</div>
+                <div style="font-size:13px;color:var(--text-muted)">No courses have been created yet</div>
             </div>`;
             return;
         }
 
         container.innerHTML = courses.map(c => `
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm h-100" style="border-radius:12px;transition:transform .2s,box-shadow .2s"
-                     onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 8px 24px rgba(79,70,229,.15)'"
-                     onmouseout="this.style.transform='';this.style.boxShadow=''">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start mb-2">
-                            <span class="badge bg-success">${c.status || 'ACTIVE'}</span>
-                            <small class="text-muted">${c.credits || 0} credits</small>
-                        </div>
-                        <h5 class="fw-semibold mb-2">${c.title || 'Untitled'}</h5>
-                        <p class="text-muted small mb-3">${(c.description || 'No description').substring(0, 100)}${(c.description||'').length > 100 ? '...' : ''}</p>
-                        <div class="d-flex gap-2 text-muted small mb-3">
-                            <span>📘 ${c.subjectCount || 0} subjects</span>
-                            <span>👥 ${c.batchCount || 0} batches</span>
-                        </div>
-                        <div class="d-flex gap-2 flex-wrap">
-                            <a href="/CourseMvc/Details/${c.id}" class="btn btn-primary btn-sm">View Details</a>
-                            ${canManage ? `<a href="/CourseMvc/Edit/${c.id}" class="btn btn-outline-secondary btn-sm">Edit</a>` : ''}
-                            ${canDelete ? `<form method="post" action="/CourseMvc/Delete/${c.id}" style="display:inline" onsubmit="return confirm('Delete this course?')">
-                                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                            </form>` : ''}
-                        </div>
+            <div class="course-card animate-up">
+                <div class="course-card-header">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
+                <div class="course-card-body">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                        <span class="lms-badge" style="background:var(--green-soft);color:var(--green)">${c.status || 'ACTIVE'}</span>
+                        <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${c.credits || 0} credits</span>
                     </div>
-                    ${c.createdByName ? `<div class="card-footer bg-transparent border-top-0 small text-muted px-4 pb-3">by ${c.createdByName}</div>` : ''}
+                    <div class="course-title">${c.title || 'Untitled'}</div>
+                    <div class="course-desc">${(c.description || 'No description').substring(0, 100)}${(c.description||'').length > 100 ? '...' : ''}</div>
+                    <div style="display:flex;gap:16px;font-size:12.5px;color:var(--text-muted);margin-bottom:16px">
+                        <span>${c.subjectCount || 0} subjects</span>
+                        <span>${c.batchCount || 0} batches</span>
+                        ${c.createdByName ? `<span>by ${c.createdByName}</span>` : ''}
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <a href="/CourseMvc/Details/${c.id}" class="btn-lms-primary btn-lms-sm">View Details</a>
+                        ${canManage ? `<a href="/CourseMvc/Edit/${c.id}" class="btn-lms-ghost btn-lms-sm">Edit</a>` : ''}
+                        ${canDelete ? `<form method="post" action="/CourseMvc/Delete/${c.id}" style="display:inline" onsubmit="return confirm('Delete this course?')">
+                            <button type="submit" class="btn-lms-danger btn-lms-sm">Delete</button>
+                        </form>` : ''}
+                    </div>
                 </div>
             </div>
         `).join('');
@@ -84,4 +75,7 @@
 
     renderCourses(coursesJson);
 </script>
+<style>
+@@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>
 }

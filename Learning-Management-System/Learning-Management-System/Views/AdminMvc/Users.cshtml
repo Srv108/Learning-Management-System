@@ -7,69 +7,58 @@
     var filterRole = ViewBag.FilterRole as string ?? "";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">👥 User Management</h4>
-        <p class="text-muted mb-0">@totalUsers total registered users</p>
+        <div class="page-title">User Management</div>
+        <div class="page-sub">@totalUsers total registered users</div>
     </div>
-    <a asp-action="AssignRole" class="btn btn-primary">+ Assign Role</a>
+    <a asp-action="AssignRole" class="btn-lms-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Assign Role
+    </a>
 </div>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
 
 <!-- Role Stats -->
-<div class="row g-3 mb-4" id="roleStats"></div>
+<div id="roleStats" class="stats-grid-5" style="margin-bottom:24px"></div>
 
 <!-- Filters -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <form method="get" asp-action="Users" class="row g-2 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label small fw-semibold">Search</label>
-                <input type="text" name="search" class="form-control" placeholder="Name or email..." value="@search" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Filter by Role</label>
-                <select name="filterRole" class="form-select">
-                    <option value="">All Roles</option>
-                    @foreach (var r in new[] { "Student", "Teacher", "CourseCoordinator", "ExamController", "Admin" })
-                    {
-                        <option value="@r" selected="@(filterRole == r ? "selected" : null)">@r</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary w-100">Filter</button>
-                <a asp-action="Users" class="btn btn-outline-secondary">Reset</a>
-            </div>
-        </form>
-    </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <form method="get" asp-action="Users" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Search</label>
+            <input type="text" name="search" class="lms-input" placeholder="Name or email..." value="@search" />
+        </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Filter by Role</label>
+            <select name="filterRole" class="lms-select">
+                <option value="">All Roles</option>
+                @foreach (var r in new[] { "Student", "Teacher", "CourseCoordinator", "ExamController", "Admin" })
+                {
+                    <option value="@r" selected="@(filterRole == r ? "selected" : null)">@r</option>
+                }
+            </select>
+        </div>
+        <div style="display:flex;gap:8px">
+            <button type="submit" class="btn-lms-primary">Filter</button>
+            <a asp-action="Users" class="btn-lms-ghost">Reset</a>
+        </div>
+    </form>
 </div>
 
-<!-- User Table -->
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-        <h6 class="fw-bold mb-0">Users</h6>
-        <span class="badge bg-primary" id="userCount">0</span>
+<div class="lms-card" style="padding:0">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <span style="font-weight:600;font-size:14px">Users</span>
+        <span class="lms-badge" style="background:var(--sky-soft);color:var(--sky)" id="userCount">0</span>
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr>
-                </thead>
-                <tbody id="usersBody">
-                    <tr><td colspan="4" class="text-center py-4 text-muted">Loading...</td></tr>
-                </tbody>
-            </table>
-        </div>
+    <div style="overflow-x:auto">
+        <table class="lms-table">
+            <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="usersBody">
+                <tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-muted)">Loading...</td></tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -77,65 +66,72 @@
 <script>
 const users = @Html.Raw(usersJson);
 const roleCounts = @Html.Raw(roleCountsJson);
-const roleColors = {
-    Student: { bg: '#dbeafe', color: '#1d4ed8', icon: '👨‍🎓' },
-    Teacher: { bg: '#d1fae5', color: '#065f46', icon: '👨‍🏫' },
-    CourseCoordinator: { bg: '#fef3c7', color: '#92400e', icon: '📋' },
-    ExamController: { bg: '#fce7f3', color: '#9d174d', icon: '📝' },
-    Admin: { bg: '#fee2e2', color: '#991b1b', icon: '⚙️' }
+
+const roleStyles = {
+    Student: { bg: 'var(--sky-soft)', color: 'var(--sky)' },
+    Teacher: { bg: 'var(--green-soft)', color: 'var(--green)' },
+    CourseCoordinator: { bg: 'var(--amber-soft)', color: 'var(--amber)' },
+    ExamController: { bg: '#f3e8ff', color: '#7c3aed' },
+    Admin: { bg: 'var(--rose-soft)', color: 'var(--rose)' }
 };
 
 // Role stat cards
 const statsEl = document.getElementById('roleStats');
 Object.entries(roleCounts).forEach(([role, count]) => {
-    const c = roleColors[role] || { bg: '#f3f4f6', color: '#374151', icon: '👤' };
+    const s = roleStyles[role] || { bg: 'var(--bg-muted)', color: 'var(--text-muted)' };
     statsEl.innerHTML += `
-        <div class="col-6 col-md-2">
-            <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fs-2 mb-1">${c.icon}</div>
-                <div class="fw-bold fs-4" style="color:${c.color}">${count}</div>
-                <div class="text-muted small">${role==='CourseCoordinator'?'Coordinator':role==='ExamController'?'Exam Ctrl':role}</div>
-            </div>
+        <div class="stat-card" style="text-align:center">
+            <div class="stat-val" style="color:${s.color}">${count}</div>
+            <div class="stat-label">${role === 'CourseCoordinator' ? 'Coordinator' : role === 'ExamController' ? 'Exam Ctrl' : role}</div>
         </div>`;
 });
 
-const badge = (role) => {
-    const c = roleColors[role] || { bg: '#f3f4f6', color: '#374151' };
-    return `<span class="badge" style="background:${c.bg};color:${c.color}">${role}</span>`;
+const roleBadge = (role) => {
+    const s = roleStyles[role] || { bg: 'var(--bg-muted)', color: 'var(--text-muted)' };
+    return `<span class="lms-badge" style="background:${s.bg};color:${s.color}">${role}</span>`;
+};
+
+const avatarColor = (role) => {
+    const map = { Student: 'av-sky', Teacher: 'av-teal', CourseCoordinator: 'av-amber', ExamController: 'av-purple', Admin: 'av-rose' };
+    return map[role] || 'av-sky';
 };
 
 document.getElementById('userCount').textContent = users.length;
 const tbody = document.getElementById('usersBody');
 
 if (!users || users.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted">No users found.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--text-muted)">No users found.</td></tr>`;
 } else {
     tbody.innerHTML = users.map(u => `
         <tr>
             <td>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="rounded-circle d-inline-flex align-items-center justify-content-center fw-bold flex-shrink-0"
-                          style="width:36px;height:36px;background:#ede9fe;color:#4f46e5;font-size:.85rem">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <div class="lms-avatar ${avatarColor(u.role)}" style="width:32px;height:32px;font-size:11px;flex-shrink:0">
                         ${((u.fullName||u.email||'?')[0]).toUpperCase()}
-                    </span>
-                    <div class="fw-semibold">${u.fullName||'-'}</div>
+                    </div>
+                    <div style="font-weight:600">${u.fullName||'-'}</div>
                 </div>
             </td>
-            <td><small class="text-muted">${u.email||''}</small></td>
-            <td>${badge(u.role||'No Role')}</td>
+            <td style="font-size:12.5px;color:var(--text-muted)">${u.email||''}</td>
+            <td>${roleBadge(u.role||'No Role')}</td>
             <td>
-                <div class="d-flex gap-1 flex-wrap">
-                    <a href="/AdminMvc/AssignRole" class="btn btn-sm btn-outline-primary py-0">+ Role</a>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+                    <a href="/AdminMvc/AssignRole" class="btn-lms-ghost btn-lms-sm">+ Role</a>
                     ${u.role&&u.role!=='No Role'?`
-                    <form method="post" action="/AdminMvc/RemoveRole"
+                    <form method="post" action="/AdminMvc/RemoveRole" style="display:inline"
                           onsubmit="return confirm('Remove role from ${(u.email||'').replace(/'/g,"\\'")}?')">
                         <input type="hidden" name="userId" value="${u.id}" />
                         <input type="hidden" name="role" value="${u.role}" />
-                        <button class="btn btn-sm btn-outline-danger py-0">✕ ${u.role}</button>
+                        <button class="btn-lms-danger btn-lms-sm">Remove ${u.role}</button>
                     </form>`:''}
                 </div>
             </td>
         </tr>`).join('');
 }
 </script>
+<style>
+.stats-grid-5 { display:grid;grid-template-columns:repeat(5,1fr);gap:16px }
+@@media(max-width:960px){.stats-grid-5{grid-template-columns:repeat(3,1fr)}}
+@@media(max-width:600px){.stats-grid-5{grid-template-columns:repeat(2,1fr)}}
+</style>
 }

@@ -5,27 +5,24 @@
     var subjectId = ViewBag.SubjectId;
 }
 
-<div class="mb-4">
-    <h4 class="fw-bold mb-1">🎯 My Exam Results</h4>
-    <p class="text-muted mb-0">View your exam scores and performance</p>
+<div class="page-header">
+    <div>
+        <div class="page-title">My Exam Results</div>
+        <div class="page-sub">View your exam scores and performance</div>
+    </div>
 </div>
 
-<!-- Selector -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Course</label>
-                <select class="form-select form-select-sm" id="courseSelect"><option value="">Select Course</option></select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <select class="form-select form-select-sm" id="subjectSelect"><option value="">Select Course First</option></select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="load()">View</button>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Course</label>
+            <select class="lms-select" id="courseSelect"><option value="">Select Course</option></select>
         </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Subject</label>
+            <select class="lms-select" id="subjectSelect"><option value="">Select Course First</option></select>
+        </div>
+        <button class="btn-lms-primary" onclick="load()">View</button>
     </div>
 </div>
 
@@ -63,53 +60,49 @@
         window.location.href = `/ExamMvc/MyResults?subjectId=${subId}`;
     }
 
+    const container = document.getElementById('summaryContainer');
     if (summary) {
         const avg = summary.averageScore || 0;
-        const color = avg >= 70 ? '#059669' : avg >= 50 ? '#d97706' : '#dc2626';
-        const status = avg >= 70 ? 'Good' : avg >= 50 ? 'Average' : 'Needs Improvement';
+        const isGood = avg >= 70;
+        const isAvg = avg >= 50 && avg < 70;
+        const color = isGood ? 'var(--green)' : isAvg ? 'var(--amber)' : 'var(--rose)';
+        const softBg = isGood ? 'var(--green-soft)' : isAvg ? 'var(--amber-soft)' : 'var(--rose-soft)';
+        const status = isGood ? 'Good' : isAvg ? 'Average' : 'Needs Improvement';
 
-        document.getElementById('summaryContainer').innerHTML = `
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body text-center py-4">
-                            <h6 class="text-muted mb-3">Average Score</h6>
-                            <div style="font-size:3rem;font-weight:700;color:${color}">${avg.toFixed(1)}</div>
-                            <span class="badge mt-2" style="background:${color}">${status}</span>
-                        </div>
-                    </div>
+        container.innerHTML = `
+            <div style="display:grid;grid-template-columns:200px 1fr;gap:20px">
+                <div class="lms-card" style="text-align:center">
+                    <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Average Score</div>
+                    <div style="font-size:48px;font-weight:800;color:${color};line-height:1;margin-bottom:8px">${avg.toFixed(1)}</div>
+                    <span class="lms-badge" style="background:${softBg};color:${color}">${status}</span>
                 </div>
-                <div class="col-md-8">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <h6 class="fw-semibold mb-3">${summary.subjectName || 'Subject'} — Exam Summary</h6>
-                            <div class="row g-3">
-                                <div class="col-4 text-center">
-                                    <div class="fw-bold fs-3">${summary.examsTaken || 0}</div>
-                                    <div class="text-muted small">Exams Taken</div>
-                                </div>
-                                <div class="col-4 text-center">
-                                    <div class="fw-bold fs-3" style="color:${color}">${avg.toFixed(1)}</div>
-                                    <div class="text-muted small">Average Score</div>
-                                </div>
-                                <div class="col-4 text-center">
-                                    <div class="fw-bold fs-3 text-primary">${summary.bestGrade || '-'}</div>
-                                    <div class="text-muted small">Best Grade</div>
-                                </div>
-                            </div>
-                            ${avg >= 50 ? `<div class="alert alert-success mt-3 mb-0 py-2 small">✅ You are passing this subject.</div>`
-                                        : `<div class="alert alert-danger mt-3 mb-0 py-2 small">⚠️ You are below passing. Please focus on improvement.</div>`}
+                <div class="lms-card">
+                    <div style="font-weight:600;font-size:15px;margin-bottom:16px">${summary.subjectName || 'Subject'} — Exam Summary</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px">
+                        <div style="text-align:center">
+                            <div style="font-size:32px;font-weight:800">${summary.examsTaken || 0}</div>
+                            <div style="font-size:12.5px;color:var(--text-muted)">Exams Taken</div>
+                        </div>
+                        <div style="text-align:center">
+                            <div style="font-size:32px;font-weight:800;color:${color}">${avg.toFixed(1)}</div>
+                            <div style="font-size:12.5px;color:var(--text-muted)">Average Score</div>
+                        </div>
+                        <div style="text-align:center">
+                            <div style="font-size:32px;font-weight:800;color:var(--amber)">${summary.bestGrade || '-'}</div>
+                            <div style="font-size:12.5px;color:var(--text-muted)">Best Grade</div>
                         </div>
                     </div>
+                    ${avg >= 50
+                        ? `<div class="lms-alert success"><div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div>You are passing this subject.</div></div>`
+                        : `<div class="lms-alert danger"><div class="alert-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div><div>You are below passing. Please focus on improvement.</div></div>`}
                 </div>
             </div>`;
     } else {
-        document.getElementById('summaryContainer').innerHTML = `
-            <div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
-                <div class="fs-1 mb-2">🎯</div>
-                <h5 class="text-muted">No results yet</h5>
-                <p class="text-muted small">Select a subject to view your exam results</p>
-            </div></div>`;
+        container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No results yet</div>
+            <div style="font-size:13px;color:var(--text-muted)">Select a subject to view your exam results</div>
+        </div>`;
     }
 </script>
 }

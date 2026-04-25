@@ -5,39 +5,28 @@
     var coursesJson = ViewBag.CoursesJson as string ?? "[]";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">📝 Assignment Management</h4>
-        <p class="text-muted mb-0">Create and manage assignments</p>
+        <div class="page-title">Assignment Management</div>
+        <div class="page-sub">Create and manage assignments</div>
     </div>
-    <a asp-action="Create" class="btn btn-primary">+ Create Assignment</a>
+    <a asp-action="Create" class="btn-lms-primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Create Assignment
+    </a>
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<!-- Filter Panel -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Course</label>
-                <select class="form-select form-select-sm" id="courseFilter">
-                    <option value="">Select Course</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <select class="form-select form-select-sm" id="subjectFilter">
-                    <option value="">Select Course First</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="filterAssignments()">Filter</button>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Course</label>
+            <select class="lms-select" id="courseFilter"><option value="">Select Course</option></select>
         </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Subject</label>
+            <select class="lms-select" id="subjectFilter"><option value="">Select Course First</option></select>
+        </div>
+        <button class="btn-lms-primary" onclick="filterAssignments()">Filter</button>
     </div>
 </div>
 
@@ -79,35 +68,30 @@
     function renderAssignments(assignments) {
         const container = document.getElementById('assignmentsList');
         if (!assignments || assignments.length === 0) {
-            container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
-                <div class="fs-1 mb-2">📝</div><h5 class="text-muted">No assignments found</h5>
-                <p class="text-muted">Select a subject to view its assignments</p>
-            </div></div>`;
+            container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No assignments found</div>
+                <div style="font-size:13px;color:var(--text-muted)">Select a subject to view its assignments</div>
+            </div>`;
             return;
         }
 
         const now = new Date();
-        container.innerHTML = `<div class="row g-4">` +
+        container.innerHTML = `<div class="content-grid-3">` +
             assignments.map(a => {
                 const due = new Date(a.dueDate);
                 const overdue = due < now;
                 return `
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="badge ${overdue ? 'bg-danger' : 'bg-primary'}">${overdue ? 'Overdue' : 'Active'}</span>
-                                <small class="text-muted">Max: ${a.maxScore}</small>
-                            </div>
-                            <h5 class="fw-semibold mb-1">${a.title}</h5>
-                            <p class="text-muted small mb-2">${a.description || ''}</p>
-                            <p class="small text-muted"><strong>Due:</strong> ${due.toLocaleDateString()} ${due.toLocaleTimeString()}</p>
-                            <p class="small text-muted">📘 ${a.subjectName || ''}</p>
-                            <div class="d-flex gap-2 mt-3">
-                                <a href="/AssignmentMvc/Submissions?assignmentId=${a.id}" class="btn btn-sm btn-outline-primary">View Submissions</a>
-                            </div>
-                        </div>
+                <div class="lms-card animate-up">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <span class="lms-badge" style="background:${overdue ? 'var(--rose-soft)' : 'var(--sky-soft)'};color:${overdue ? 'var(--rose)' : 'var(--sky)'}">${overdue ? 'Overdue' : 'Active'}</span>
+                        <span style="font-size:12px;color:var(--text-muted)">Max: ${a.maxScore} pts</span>
                     </div>
+                    <div style="font-weight:700;font-size:15px;margin-bottom:6px">${a.title}</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">${a.description || ''}</div>
+                    <div style="font-size:12.5px;margin-bottom:4px"><span style="color:var(--text-muted)">Due:</span> <strong style="color:${overdue ? 'var(--rose)' : 'var(--text)'}">${due.toLocaleDateString()} ${due.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</strong></div>
+                    <div style="font-size:12.5px;color:var(--text-muted);margin-bottom:16px">${a.subjectName || ''}</div>
+                    <a href="/AssignmentMvc/Submissions?assignmentId=${a.id}" class="btn-lms-primary btn-lms-sm">View Submissions</a>
                 </div>`;
             }).join('') + `</div>`;
     }

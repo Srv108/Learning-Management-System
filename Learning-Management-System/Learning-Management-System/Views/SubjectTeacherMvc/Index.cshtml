@@ -5,75 +5,47 @@
     var allTeachersJson = ViewBag.AllTeachersJson as string ?? "[]";
     var subjectId = ViewBag.SubjectId;
     var userRole = ViewBag.UserRole as string ?? "";
+    ViewData["Breadcrumb"] = "<a href='/CourseMvc/Index' style='color:var(--text-muted);text-decoration:none'>Courses</a> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <span id='breadCourseLink'>Course</span> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <span class='current'>Subject Teachers</span>";
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
-        <li class="breadcrumb-item"><span id="courseLink">Course</span></li>
-        <li class="breadcrumb-item active">Subject Teachers</li>
-    </ol>
-</nav>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">👨‍🏫 Subject Teacher Assignment</h4>
-        <p class="text-muted mb-0" id="subjectTitle">Loading subject...</p>
+        <div class="page-title">Subject Teacher Assignment</div>
+        <div class="page-sub" id="subjectTitle">Loading subject...</div>
     </div>
-    <a asp-controller="CourseMvc" asp-action="Index" class="btn btn-outline-secondary btn-sm">← Back to Courses</a>
+    <a asp-controller="CourseMvc" asp-action="Index" class="btn-lms-ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Courses
+    </a>
 </div>
 
-<div class="row g-4">
-    <!-- Current Teachers -->
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0">Assigned Teachers</h6>
-                <span class="badge bg-primary" id="teacherCount">0</span>
-            </div>
-            <div class="card-body p-0" id="teacherList">
-                <div class="text-center py-5 text-muted">
-                    <div class="fs-1">👨‍🏫</div>
-                    <p>No teachers assigned yet.</p>
-                </div>
-            </div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px">
+    <div class="lms-card" style="padding:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+            <span style="font-weight:600;font-size:14px">Assigned Teachers</span>
+            <span class="lms-badge" style="background:var(--sky-soft);color:var(--sky)" id="teacherCount">0</span>
         </div>
+        <div id="teacherList" style="padding:20px;text-align:center;color:var(--text-muted)">Loading...</div>
     </div>
 
-    <!-- Assign Teacher -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h6 class="fw-bold mb-0">Assign Teacher</h6>
-            </div>
-            <div class="card-body">
-                <form method="post" asp-action="Assign">
-                    <input type="hidden" name="subjectId" value="@subjectId" />
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold small">Select Teacher</label>
-                        <select name="teacherId" class="form-select" id="teacherSelect" required>
-                            <option value="">Choose a teacher...</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">Assign Teacher</button>
-                </form>
-            </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="lms-card">
+            <div style="font-weight:600;font-size:14px;margin-bottom:16px">Assign Teacher</div>
+            <form method="post" asp-action="Assign" style="display:flex;flex-direction:column;gap:14px">
+                <input type="hidden" name="subjectId" value="@subjectId" />
+                <div class="lms-form-group">
+                    <label class="lms-label">Select Teacher</label>
+                    <select name="teacherId" class="lms-select" id="teacherSelect" required>
+                        <option value="">Choose a teacher...</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-lms-primary" style="width:100%">Assign Teacher</button>
+            </form>
         </div>
 
-        <div class="card border-0 shadow-sm mt-3">
-            <div class="card-body">
-                <h6 class="fw-semibold mb-2">Subject Info</h6>
-                <div id="subjectInfo" class="text-muted small">Loading...</div>
-            </div>
+        <div class="lms-card" id="subjectInfoCard">
+            <div style="font-weight:600;font-size:14px;margin-bottom:12px">Subject Info</div>
+            <div id="subjectInfo" style="font-size:13px;color:var(--text-muted)">Loading...</div>
         </div>
     </div>
 </div>
@@ -85,51 +57,50 @@
     const allTeachers = @Html.Raw(allTeachersJson);
     const subjectId = @Html.Raw(subjectId?.ToString() ?? "0");
 
-    // Subject info
     if (subject && subject.name) {
         document.getElementById('subjectTitle').textContent = subject.name + (subject.courseName ? ' — ' + subject.courseName : '');
         document.getElementById('subjectInfo').innerHTML = `
-            <div><strong>Subject:</strong> ${subject.name}</div>
-            <div><strong>Course:</strong> ${subject.courseName || '-'}</div>
-            <div class="mt-1 text-muted">${subject.description || 'No description.'}</div>
+            <div style="margin-bottom:4px"><span style="color:var(--text-muted)">Subject:</span> <strong>${subject.name}</strong></div>
+            <div style="margin-bottom:8px"><span style="color:var(--text-muted)">Course:</span> <strong>${subject.courseName || '-'}</strong></div>
+            <div>${subject.description || 'No description.'}</div>
         `;
-        // Update breadcrumb
         if (subject.courseId) {
-            document.getElementById('courseLink').innerHTML = `<a href="/CourseMvc/Details/${subject.courseId}">${subject.courseName || 'Course'}</a>`;
+            document.getElementById('breadCourseLink').innerHTML = `<a href="/CourseMvc/Details/${subject.courseId}" style="color:var(--text-muted);text-decoration:none">${subject.courseName || 'Course'}</a>`;
         }
     }
 
-    // Populate teacher dropdown
     const sel = document.getElementById('teacherSelect');
     const assignedIds = new Set((teachers || []).map(t => t.teacherId));
     allTeachers.forEach(t => {
         const opt = document.createElement('option');
         opt.value = t.id;
-        opt.textContent = t.name + ' (' + t.email + ')';
-        if (assignedIds.has(t.id)) opt.disabled = true, opt.textContent += ' ✓ assigned';
+        opt.textContent = t.name + ' (' + t.email + ')' + (assignedIds.has(t.id) ? ' ✓' : '');
+        if (assignedIds.has(t.id)) opt.disabled = true;
         sel.appendChild(opt);
     });
 
-    // Render teacher list
     const listEl = document.getElementById('teacherList');
     document.getElementById('teacherCount').textContent = (teachers || []).length;
 
     if (!teachers || teachers.length === 0) {
-        listEl.innerHTML = `<div class="text-center py-5 text-muted"><div class="fs-1 mb-2">👨‍🏫</div><p>No teachers assigned yet.</p></div>`;
+        listEl.innerHTML = `<div style="padding:32px 0">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:8px"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            <div style="font-size:13px">No teachers assigned yet.</div>
+        </div>`;
     } else {
-        listEl.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
-            <thead class="table-light"><tr><th>Teacher</th><th>Email</th><th>Assigned</th><th></th></tr></thead>
+        listEl.innerHTML = `<div style="overflow-x:auto"><table class="lms-table">
+            <thead><tr><th>Teacher</th><th>Email</th><th>Assigned</th><th>Action</th></tr></thead>
             <tbody>
                 ${teachers.map(t => `
                     <tr>
-                        <td><div class="fw-semibold">${t.teacherName || '-'}</div></td>
-                        <td><small class="text-muted">${t.teacherEmail || ''}</small></td>
-                        <td><small class="text-muted">${t.assignedAt ? new Date(t.assignedAt).toLocaleDateString() : '-'}</small></td>
+                        <td style="font-weight:600">${t.teacherName || '-'}</td>
+                        <td style="font-size:12.5px;color:var(--text-muted)">${t.teacherEmail || ''}</td>
+                        <td style="font-size:12.5px;color:var(--text-muted)">${t.assignedAt ? new Date(t.assignedAt).toLocaleDateString() : '-'}</td>
                         <td>
                             <form method="post" action="/SubjectTeacherMvc/Remove" onsubmit="return confirm('Remove this teacher?')">
                                 <input type="hidden" name="id" value="${t.id}" />
                                 <input type="hidden" name="subjectId" value="${subjectId}" />
-                                <button class="btn btn-sm btn-outline-danger">Remove</button>
+                                <button class="btn-lms-danger btn-lms-sm">Remove</button>
                             </form>
                         </td>
                     </tr>`).join('')}

@@ -3,45 +3,32 @@
     var sessionId = ViewBag.SessionId;
     var sessionJson = ViewBag.SessionJson as string ?? "{}";
     var recordsJson = ViewBag.RecordsJson as string ?? "[]";
+    ViewData["Breadcrumb"] = "<a href='/AttendanceMvc/Index' style='color:var(--text-muted);text-decoration:none'>Attendance</a> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <span class='current'>Mark Attendance</span>";
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-action="Index">Attendance</a></li>
-        <li class="breadcrumb-item active">Mark Attendance</li>
-    </ol>
-</nav>
+<div class="page-header">
+    <div>
+        <div class="page-title">Mark Attendance</div>
+        <div class="page-sub">Record student attendance for this session</div>
+    </div>
+</div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
+<div id="sessionHeader" style="margin-bottom:20px"></div>
 
-<div id="sessionHeader" class="mb-4"></div>
-
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
-        <h6 class="fw-bold mb-0">Student Attendance</h6>
-        <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-success" onclick="markAll('PRESENT')">Mark All Present</button>
-            <button class="btn btn-sm btn-danger" onclick="markAll('ABSENT')">Mark All Absent</button>
+<div class="lms-card" style="padding:0">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)">
+        <span style="font-weight:600;font-size:14px">Student Attendance</span>
+        <div style="display:flex;gap:8px">
+            <button class="btn-lms-ghost btn-lms-sm" onclick="markAll('PRESENT')">Mark All Present</button>
+            <button class="btn-lms-danger btn-lms-sm" onclick="markAll('ABSENT')">Mark All Absent</button>
         </div>
     </div>
-    <div class="card-body p-0">
-        <div id="attendanceList">
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary"></div>
-                <p class="text-muted mt-2">Loading students...</p>
-            </div>
-        </div>
+    <div id="attendanceList" style="padding:20px;text-align:center;color:var(--text-muted)">
+        Loading students...
     </div>
-    <div class="card-footer bg-white d-flex gap-2 py-3">
-        <button class="btn btn-primary px-4" onclick="saveAttendance()">Save Attendance</button>
-        <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+    <div style="padding:16px 20px;border-top:1px solid var(--border);display:flex;gap:10px">
+        <button class="btn-lms-primary" onclick="saveAttendance()">Save Attendance</button>
+        <a asp-action="Index" class="btn-lms-ghost">Back</a>
     </div>
 </div>
 
@@ -50,56 +37,50 @@
     const sessionId = @Html.Raw(sessionId?.ToString() ?? "0");
     const session = @Html.Raw(sessionJson);
     const existingRecords = @Html.Raw(recordsJson);
-
-    // Build status map from existing records
     const statusMap = {};
     existingRecords.forEach(r => { statusMap[r.studentId] = r.status; });
 
     document.getElementById('sessionHeader').innerHTML = `
-        <div class="card border-0 shadow-sm">
-            <div class="card-body py-3">
-                <div class="d-flex gap-4 align-items-center flex-wrap">
-                    <div><span class="text-muted small">Subject</span><div class="fw-semibold">${session.subjectName || '-'}</div></div>
-                    <div><span class="text-muted small">Course</span><div class="fw-semibold">${session.courseName || '-'}</div></div>
-                    <div><span class="text-muted small">Date</span><div class="fw-semibold">${session.sessionDate ? new Date(session.sessionDate).toLocaleDateString() : '-'}</div></div>
-                    <div><span class="text-muted small">Present</span><div class="fw-semibold text-success">${session.presentCount || 0}</div></div>
-                    <div><span class="text-muted small">Absent</span><div class="fw-semibold text-danger">${session.absentCount || 0}</div></div>
-                </div>
+        <div class="lms-card">
+            <div style="display:flex;gap:32px;flex-wrap:wrap">
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Subject</div><div style="font-weight:600">${session.subjectName || '-'}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Course</div><div style="font-weight:600">${session.courseName || '-'}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Date</div><div style="font-weight:600">${session.sessionDate ? new Date(session.sessionDate).toLocaleDateString() : '-'}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Present</div><div style="font-weight:600;color:var(--green)">${session.presentCount || 0}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Absent</div><div style="font-weight:600;color:var(--rose)">${session.absentCount || 0}</div></div>
             </div>
         </div>`;
 
-    // Load enrolled students via batch (if records exist, show them)
+    const students = {};
     const attendanceList = document.getElementById('attendanceList');
+
     if (existingRecords && existingRecords.length > 0) {
         renderAttendanceList(existingRecords);
     } else {
-        attendanceList.innerHTML = `<div class="p-4 text-center text-muted">
-            <p>No students found for this session yet.</p>
-            <p class="small">To add students, you need to manually enter their IDs below or they need to be enrolled in the batch.</p>
-            <div class="input-group w-50 mx-auto mb-2">
-                <input type="text" id="newStudentId" class="form-control" placeholder="Enter student ID" />
-                <button class="btn btn-primary" onclick="addStudent()">Add</button>
+        attendanceList.innerHTML = `<div style="padding:12px 0">
+            <div style="margin-bottom:16px;color:var(--text-muted);font-size:13px">No students found. Add manually by student ID.</div>
+            <div style="display:flex;gap:8px;max-width:400px">
+                <input type="text" id="newStudentId" class="lms-input" placeholder="Enter student ID" />
+                <button class="btn-lms-primary" onclick="addStudent()">Add</button>
             </div>
-            <div id="manualList"></div>
+            <div id="manualList" style="margin-top:16px"></div>
         </div>`;
     }
 
-    const students = {}; // studentId -> status map for saving
-
     function renderAttendanceList(records) {
         records.forEach(r => { students[r.studentId] = r.status || 'PRESENT'; });
-        attendanceList.innerHTML = `<div class="table-responsive"><table class="table table-hover mb-0">
-            <thead class="table-light"><tr><th>Student Name</th><th>Email</th><th>Status</th></tr></thead>
+        attendanceList.innerHTML = `<div style="overflow-x:auto"><table class="lms-table">
+            <thead><tr><th>Student Name</th><th>Email</th><th>Status</th></tr></thead>
             <tbody>` +
             records.map(r => `
                 <tr id="row-${r.studentId}">
-                    <td class="fw-semibold">${r.studentName || r.studentId}</td>
-                    <td class="text-muted small">${r.studentEmail || ''}</td>
+                    <td style="font-weight:600">${r.studentName || r.studentId}</td>
+                    <td style="color:var(--text-muted);font-size:13px">${r.studentEmail || ''}</td>
                     <td>
-                        <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn ${students[r.studentId] === 'PRESENT' ? 'btn-success' : 'btn-outline-success'}"
+                        <div style="display:flex;gap:6px">
+                            <button type="button" class="att-btn ${students[r.studentId] === 'PRESENT' ? 'att-present' : 'att-outline'}"
                                     onclick="setStatus('${r.studentId}','PRESENT',this)">Present</button>
-                            <button type="button" class="btn ${students[r.studentId] === 'ABSENT' ? 'btn-danger' : 'btn-outline-danger'}"
+                            <button type="button" class="att-btn ${students[r.studentId] === 'ABSENT' ? 'att-absent' : 'att-outline-danger'}"
                                     onclick="setStatus('${r.studentId}','ABSENT',this)">Absent</button>
                         </div>
                     </td>
@@ -110,42 +91,37 @@
     function setStatus(studentId, status, btn) {
         students[studentId] = status;
         const row = document.getElementById('row-' + studentId);
-        row.querySelectorAll('.btn').forEach(b => {
-            b.className = b.className.replace('btn-success','btn-outline-success').replace('btn-danger','btn-outline-danger');
+        row.querySelectorAll('.att-btn').forEach(b => {
+            b.className = b.className.replace('att-present','att-outline').replace('att-absent','att-outline-danger');
         });
-        if (status === 'PRESENT') btn.className = btn.className.replace('btn-outline-success','btn-success');
-        else btn.className = btn.className.replace('btn-outline-danger','btn-danger');
+        if (status === 'PRESENT') btn.className = btn.className.replace('att-outline','att-present');
+        else btn.className = btn.className.replace('att-outline-danger','att-absent');
     }
 
     function markAll(status) {
         Object.keys(students).forEach(id => { students[id] = status; });
         document.querySelectorAll('[id^="row-"]').forEach(row => {
-            const buttons = row.querySelectorAll('.btn');
-            buttons.forEach(b => {
-                b.className = b.className.replace('btn-success','btn-outline-success').replace('btn-danger','btn-outline-danger');
-            });
-            if (status === 'PRESENT') buttons[0].className = buttons[0].className.replace('btn-outline-success','btn-success');
-            else buttons[1].className = buttons[1].className.replace('btn-outline-danger','btn-danger');
+            const buttons = row.querySelectorAll('.att-btn');
+            buttons[0].className = status === 'PRESENT'
+                ? buttons[0].className.replace('att-outline','att-present')
+                : buttons[0].className.replace('att-present','att-outline');
+            buttons[1].className = status === 'ABSENT'
+                ? buttons[1].className.replace('att-outline-danger','att-absent')
+                : buttons[1].className.replace('att-absent','att-outline-danger');
         });
     }
 
     async function saveAttendance() {
         const records = Object.entries(students).map(([studentId, status]) => ({ studentId, status }));
         if (records.length === 0) { alert('No students to mark'); return; }
-
-        const token = document.cookie; // We'll use the form submit approach
         const form = document.createElement('form');
         form.method = 'post';
         form.action = '/AttendanceMvc/BulkMark';
-
         const addField = (name, value) => {
             const input = document.createElement('input');
-            input.type = 'hidden';
-            input.name = name;
-            input.value = value;
+            input.type = 'hidden'; input.name = name; input.value = value;
             form.appendChild(input);
         };
-
         addField('sessionId', sessionId);
         addField('recordsJson', JSON.stringify(records));
         document.body.appendChild(form);
@@ -157,13 +133,22 @@
         if (!id) return;
         students[id] = 'PRESENT';
         const ml = document.getElementById('manualList');
-        ml.innerHTML += `<div id="row-${id}" class="d-flex align-items-center gap-2 mb-1">
-            <span class="fw-semibold">${id}</span>
-            <div class="btn-group btn-group-sm">
-                <button type="button" class="btn btn-success" onclick="setStatus('${id}','PRESENT',this)">Present</button>
-                <button type="button" class="btn btn-outline-danger" onclick="setStatus('${id}','ABSENT',this)">Absent</button>
+        ml.innerHTML += `<div id="row-${id}" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <span style="font-weight:600;min-width:120px">${id}</span>
+            <div style="display:flex;gap:6px">
+                <button type="button" class="att-btn att-present" onclick="setStatus('${id}','PRESENT',this)">Present</button>
+                <button type="button" class="att-btn att-outline-danger" onclick="setStatus('${id}','ABSENT',this)">Absent</button>
             </div>
         </div>`;
+        document.getElementById('newStudentId').value = '';
     }
 </script>
+<style>
+.att-btn { padding:4px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12.5px;font-weight:500;transition:all .15s }
+.att-present { background:var(--green-soft);color:var(--green) }
+.att-absent { background:var(--rose-soft);color:var(--rose) }
+.att-outline { background:var(--bg-muted);color:var(--text-muted) }
+.att-outline-danger { background:var(--bg-muted);color:var(--text-muted) }
+.att-btn:hover { opacity:.85 }
+</style>
 }

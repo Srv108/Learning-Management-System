@@ -1,375 +1,327 @@
 @{
     ViewData["Title"] = "Dashboard";
-    var userRole = ViewBag.UserRole as string ?? "Student";
+    var userRole     = ViewBag.UserRole as string ?? "Student";
     var userFullName = ViewBag.UserFullName as string ?? "User";
-    var userId = ViewBag.UserId as string ?? "";
+    var userId       = ViewBag.UserId as string ?? "";
 
-    bool IsStudent() => userRole == "Student";
-    bool IsTeacher() => userRole == "Teacher";
-    bool IsCoordinator() => userRole == "CourseCoordinator";
+    bool IsStudent()        => userRole == "Student";
+    bool IsTeacher()        => userRole == "Teacher";
+    bool IsCoordinator()    => userRole == "CourseCoordinator";
     bool IsExamController() => userRole == "ExamController";
-    bool IsAdmin() => userRole == "Admin";
+    bool IsAdmin()          => userRole == "Admin";
+
+    string Greeting() {
+        var h = DateTime.Now.Hour;
+        if (h < 12) return "Good morning";
+        if (h < 17) return "Good afternoon";
+        return "Good evening";
+    }
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h4 class="fw-bold mb-1">Welcome back, @userFullName! 👋</h4>
-        <p class="text-muted mb-0">
-            @{
-                var roleDesc = userRole switch {
-                    "Student" => "Track your learning journey, assignments, and exam results.",
-                    "Teacher" => "Manage your courses, assignments, and student attendance.",
-                    "CourseCoordinator" => "Oversee enrollments, course batches, and curriculum.",
-                    "ExamController" => "Schedule exams and record student results.",
-                    "Admin" => "Full system access — manage users, courses, and all modules.",
-                    _ => "Learning Management System"
-                };
-            }
-            @roleDesc
-        </p>
-    </div>
-    <span class="badge fs-6 px-3 py-2" style="background:#ede9fe;color:#4f46e5;">@userRole</span>
-</div>
-
-@* Student Dashboard *@
-@if (IsStudent())
-{
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-2">📚</div>
-                        <h5 class="fw-semibold">Browse Courses</h5>
-                        <p class="text-muted small">View all available courses</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="EnrollmentMvc" asp-action="MyEnrollments" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-2">📋</div>
-                        <h5 class="fw-semibold">My Enrollments</h5>
-                        <p class="text-muted small">View your enrolled courses & batches</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="AttendanceMvc" asp-action="MyAttendance" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-2">✅</div>
-                        <h5 class="fw-semibold">My Attendance</h5>
-                        <p class="text-muted small">Check your attendance records</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="AssignmentMvc" asp-action="MyAssignments" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-2">📝</div>
-                        <h5 class="fw-semibold">My Assignments</h5>
-                        <p class="text-muted small">Submit and track your assignments</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ExamMvc" asp-action="MyResults" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-2">🎯</div>
-                        <h5 class="fw-semibold">My Exam Results</h5>
-                        <p class="text-muted small">View your exam scores and grades</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ProgressMvc" asp-action="MyProgress" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card">
-                    <div class="card-body text-center py-4">
-                        <div class="fs-1 mb-2">📈</div>
-                        <h5 class="fw-semibold">My Progress</h5>
-                        <p class="text-muted small">Performance analytics & reports</p>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-}
-
-@* Teacher Dashboard *@
-@if (IsTeacher())
-{
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #4f46e5!important">
-                    <div class="card-body py-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="fs-2">📚</div>
-                            <div>
-                                <h6 class="fw-semibold mb-1">Courses</h6>
-                                <p class="text-muted small mb-0">Browse & manage courses</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="CourseMvc" asp-action="Create" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #059669!important">
-                    <div class="card-body py-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="fs-2">➕</div>
-                            <div>
-                                <h6 class="fw-semibold mb-1">Create Course</h6>
-                                <p class="text-muted small mb-0">Add a new course</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="AttendanceMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #d97706!important">
-                    <div class="card-body py-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="fs-2">✅</div>
-                            <div>
-                                <h6 class="fw-semibold mb-1">Attendance</h6>
-                                <p class="text-muted small mb-0">Mark & manage sessions</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="AssignmentMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #7c3aed!important">
-                    <div class="card-body py-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="fs-2">📝</div>
-                            <div>
-                                <h6 class="fw-semibold mb-1">Assignments</h6>
-                                <p class="text-muted small mb-0">Create & grade assignments</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #dc2626!important">
-                    <div class="card-body py-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="fs-2">📊</div>
-                            <div>
-                                <h6 class="fw-semibold mb-1">Exams</h6>
-                                <p class="text-muted small mb-0">Schedule & record results</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card" style="border-left:4px solid #0891b2!important">
-                    <div class="card-body py-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="fs-2">📈</div>
-                            <div>
-                                <h6 class="fw-semibold mb-1">Analytics</h6>
-                                <p class="text-muted small mb-0">Student progress reports</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </a>
-        </div>
-    </div>
-}
-
-@* CourseCoordinator Dashboard *@
-@if (IsCoordinator())
-{
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📚</div><h6 class="fw-semibold">Courses</h6><p class="text-muted small mb-0">Manage curriculum</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="EnrollmentMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📋</div><h6 class="fw-semibold">Enrollments</h6><p class="text-muted small mb-0">Manage student enrollment</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="AttendanceMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">✅</div><h6 class="fw-semibold">Attendance</h6><p class="text-muted small mb-0">Track attendance</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="AssignmentMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📝</div><h6 class="fw-semibold">Assignments</h6><p class="text-muted small mb-0">Manage assignments</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📊</div><h6 class="fw-semibold">Exams</h6><p class="text-muted small mb-0">Schedule exams</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📈</div><h6 class="fw-semibold">Analytics</h6><p class="text-muted small mb-0">Performance reports</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="ProgressMvc" asp-action="AtRisk" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">⚠️</div><h6 class="fw-semibold">At-Risk Students</h6><p class="text-muted small mb-0">Low attendance/grades</p>
-                </div>
-            </a>
-        </div>
-    </div>
-}
-
-@* ExamController Dashboard *@
-@if (IsExamController())
-{
-    <div class="row g-4 mb-4">
-        <div class="col-md-4">
-            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📚</div><h6 class="fw-semibold">Courses & Subjects</h6><p class="text-muted small">Browse for exam scheduling</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📊</div><h6 class="fw-semibold">All Exams</h6><p class="text-muted small">View scheduled exams</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ExamMvc" asp-action="Create" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">➕</div><h6 class="fw-semibold">Schedule Exam</h6><p class="text-muted small">Create new exam</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ExamMvc" asp-action="RecordResults" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📋</div><h6 class="fw-semibold">Record Results</h6><p class="text-muted small">Enter exam scores</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-4">
-            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4">
-                    <div class="fs-1 mb-2">📈</div><h6 class="fw-semibold">Analytics</h6><p class="text-muted small">Student performance</p>
-                </div>
-            </a>
-        </div>
-    </div>
-}
-
-@* Admin Dashboard *@
+<!-- ─── ADMIN DASHBOARD ─── -->
 @if (IsAdmin())
 {
-    <div class="row g-4 mb-4">
-        <div class="col-md-3">
-            <a asp-controller="AdminMvc" asp-action="Users" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #dc2626!important">
-                    <div class="fs-1 mb-2">👥</div><h6 class="fw-semibold">User Management</h6><p class="text-muted small">Manage all users</p>
-                </div>
-            </a>
+<div style="margin-bottom:22px;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+        <div class="page-eyebrow">System Overview</div>
+        <div class="page-title">Admin Dashboard</div>
+        <div class="page-subtitle">Academic Year 2025–26 · Full system access</div>
+    </div>
+    <div style="display:flex;gap:8px">
+        <a asp-controller="AdminMvc" asp-action="Users" class="btn-lms btn-lms-ghost">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            Manage Users
+        </a>
+        <a asp-controller="CourseMvc" asp-action="Create" class="btn-lms btn-lms-primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New Course
+        </a>
+    </div>
+</div>
+
+<div class="stats-grid-4 animate-up">
+    <div class="stat-card delay-1">
+        <div class="stat-icon navy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <div class="col-md-3">
-            <a asp-controller="CourseMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #4f46e5!important">
-                    <div class="fs-1 mb-2">📚</div><h6 class="fw-semibold">Courses</h6><p class="text-muted small">Manage all courses</p>
-                </div>
-            </a>
+        <div class="stat-value">38</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-change neutral">5 roles · all active</div>
+    </div>
+    <div class="stat-card delay-2">
+        <div class="stat-icon amber">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
         </div>
-        <div class="col-md-3">
-            <a asp-controller="EnrollmentMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #059669!important">
-                    <div class="fs-1 mb-2">📋</div><h6 class="fw-semibold">Enrollments</h6><p class="text-muted small">Manage enrollments</p>
-                </div>
-            </a>
+        <div class="stat-value">6</div>
+        <div class="stat-label">Active Courses</div>
+        <div class="stat-change neutral">26 subjects · 12 batches</div>
+    </div>
+    <div class="stat-card delay-3">
+        <div class="stat-icon teal">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         </div>
-        <div class="col-md-3">
-            <a asp-controller="AttendanceMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #d97706!important">
-                    <div class="fs-1 mb-2">✅</div><h6 class="fw-semibold">Attendance</h6><p class="text-muted small">Track attendance</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="AssignmentMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #7c3aed!important">
-                    <div class="fs-1 mb-2">📝</div><h6 class="fw-semibold">Assignments</h6><p class="text-muted small">Manage assignments</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="ExamMvc" asp-action="Index" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #dc2626!important">
-                    <div class="fs-1 mb-2">📊</div><h6 class="fw-semibold">Exams</h6><p class="text-muted small">Manage exams</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="ProgressMvc" asp-action="Analytics" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #0891b2!important">
-                    <div class="fs-1 mb-2">📈</div><h6 class="fw-semibold">Analytics</h6><p class="text-muted small">Performance reports</p>
-                </div>
-            </a>
-        </div>
-        <div class="col-md-3">
-            <a asp-controller="ProgressMvc" asp-action="AtRisk" class="text-decoration-none">
-                <div class="card border-0 shadow-sm h-100 dashboard-card text-center py-4" style="border-top:3px solid #f59e0b!important">
-                    <div class="fs-1 mb-2">⚠️</div><h6 class="fw-semibold">At-Risk Students</h6><p class="text-muted small">Intervention needed</p>
-                </div>
-            </a>
+        <div class="stat-value">8,580</div>
+        <div class="stat-label">Attendance Records</div>
+        <div class="stat-change up">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+            87.4% avg rate
         </div>
     </div>
+    <div class="stat-card delay-4">
+        <div class="stat-icon rose">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        <div class="stat-value">49</div>
+        <div class="stat-label">At-Risk Students</div>
+        <div class="stat-change down">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+            Needs intervention
+        </div>
+    </div>
+</div>
+
+<div class="lms-alert warning animate-up">
+    <div class="alert-icon">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>
+    </div>
+    <div style="flex:1">
+        <div class="alert-title">49 students flagged as at-risk across 6 courses</div>
+        <div class="alert-body">Students with attendance below 75% or exam scores below 50%. Schedule intervention sessions.</div>
+    </div>
+    <a asp-controller="ProgressMvc" asp-action="AtRisk" class="btn-lms btn-lms-ghost btn-lms-sm" style="flex-shrink:0">View All →</a>
+</div>
+
+<div class="content-grid-3 animate-up delay-2">
+    <a asp-controller="AdminMvc" asp-action="Users" class="qa-card">
+        <div class="qa-icon" style="background:rgba(27,42,74,0.08)">👥</div>
+        <div><div class="qa-title">User Management</div><div class="qa-sub">38 users · manage roles</div></div>
+    </a>
+    <a asp-controller="CourseMvc" asp-action="Index" class="qa-card">
+        <div class="qa-icon" style="background:var(--amber-soft)">📚</div>
+        <div><div class="qa-title">Courses</div><div class="qa-sub">6 active · 180 enrolled</div></div>
+    </a>
+    <a asp-controller="EnrollmentMvc" asp-action="Index" class="qa-card">
+        <div class="qa-icon" style="background:var(--teal-soft)">📋</div>
+        <div><div class="qa-title">Enrollments</div><div class="qa-sub">12 batches · manage</div></div>
+    </a>
+    <a asp-controller="AttendanceMvc" asp-action="Index" class="qa-card">
+        <div class="qa-icon" style="background:var(--green-soft)">✅</div>
+        <div><div class="qa-title">Attendance</div><div class="qa-sub">390 sessions tracked</div></div>
+    </a>
+    <a asp-controller="ExamMvc" asp-action="Index" class="qa-card">
+        <div class="qa-icon" style="background:var(--rose-soft)">📊</div>
+        <div><div class="qa-title">Exams</div><div class="qa-sub">78 exams · 1716 results</div></div>
+    </a>
+    <a asp-controller="ProgressMvc" asp-action="SystemAnalytics" class="qa-card">
+        <div class="qa-icon" style="background:var(--sky-soft)">📈</div>
+        <div><div class="qa-title">System Analytics</div><div class="qa-sub">All students · all courses</div></div>
+    </a>
+</div>
 }
 
-<style>
-.dashboard-card {
-    border-radius: 12px;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
+<!-- ─── COORDINATOR DASHBOARD ─── -->
+@if (IsCoordinator())
+{
+<div style="margin-bottom:22px;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+        <div class="page-eyebrow">Course Management</div>
+        <div class="page-title">Coordinator Dashboard</div>
+        <div class="page-subtitle">Oversee enrollments, curriculum and student progress</div>
+    </div>
+    <a asp-controller="EnrollmentMvc" asp-action="Enroll" class="btn-lms btn-lms-amber">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Enroll Student
+    </a>
+</div>
+
+<div class="stats-grid-4 animate-up">
+    <div class="stat-card delay-1">
+        <div class="stat-icon amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+        <div class="stat-value">6</div><div class="stat-label">Active Courses</div>
+        <div class="stat-change neutral">26 subjects</div>
+    </div>
+    <div class="stat-card delay-2">
+        <div class="stat-icon navy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+        <div class="stat-value">180</div><div class="stat-label">Enrollments</div>
+        <div class="stat-change neutral">30 students · 12 batches</div>
+    </div>
+    <div class="stat-card delay-3">
+        <div class="stat-icon rose"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div>
+        <div class="stat-value">49</div><div class="stat-label">At-Risk Students</div>
+        <div class="stat-change down">Review needed</div>
+    </div>
+    <div class="stat-card delay-4">
+        <div class="stat-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="stat-value">2,407</div><div class="stat-label">Submissions Graded</div>
+        <div class="stat-change up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>130 assignments</div>
+    </div>
+</div>
+
+<div class="content-grid-3 animate-up delay-2">
+    <a asp-controller="CourseMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--amber-soft)">📚</div><div><div class="qa-title">Courses</div><div class="qa-sub">Browse & manage curriculum</div></div></a>
+    <a asp-controller="CourseMvc" asp-action="Create" class="qa-card"><div class="qa-icon" style="background:var(--green-soft)">➕</div><div><div class="qa-title">Create Course</div><div class="qa-sub">Add new course & subjects</div></div></a>
+    <a asp-controller="EnrollmentMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--sky-soft)">📋</div><div><div class="qa-title">Manage Enrollments</div><div class="qa-sub">Batches · student rosters</div></div></a>
+    <a asp-controller="ProgressMvc" asp-action="Analytics" class="qa-card"><div class="qa-icon" style="background:var(--navy-soft,rgba(27,42,74,0.08))">📈</div><div><div class="qa-title">Course Analytics</div><div class="qa-sub">Progress & performance reports</div></div></a>
+    <a asp-controller="ProgressMvc" asp-action="AtRisk" class="qa-card"><div class="qa-icon" style="background:var(--rose-soft)">⚠️</div><div><div class="qa-title">At-Risk Students</div><div class="qa-sub">Low attendance / grades</div></div></a>
+    <a asp-controller="AdminMvc" asp-action="Users" class="qa-card"><div class="qa-icon" style="background:var(--teal-soft)">👥</div><div><div class="qa-title">User Management</div><div class="qa-sub">View all users & roles</div></div></a>
+</div>
 }
-.dashboard-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(79,70,229,0.15) !important;
+
+<!-- ─── TEACHER DASHBOARD ─── -->
+@if (IsTeacher())
+{
+<div style="margin-bottom:22px;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+        <div class="page-eyebrow">Teaching Panel</div>
+        <div class="page-title">@Greeting(), @userFullName.Split(' ')[0]!</div>
+        <div class="page-subtitle">Manage your courses, assignments, and student progress</div>
+    </div>
+    <div style="display:flex;gap:8px">
+        <a asp-controller="AttendanceMvc" asp-action="CreateSession" class="btn-lms btn-lms-ghost">+ Session</a>
+        <a asp-controller="AssignmentMvc" asp-action="Create" class="btn-lms btn-lms-amber">+ Assignment</a>
+    </div>
+</div>
+
+<div class="stats-grid-4 animate-up">
+    <div class="stat-card delay-1">
+        <div class="stat-icon amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
+        <div class="stat-value">6</div><div class="stat-label">Courses</div>
+        <div class="stat-change neutral">26 subjects total</div>
+    </div>
+    <div class="stat-card delay-2">
+        <div class="stat-icon teal"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div>
+        <div class="stat-value">390</div><div class="stat-label">Attendance Sessions</div>
+        <div class="stat-change up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>8,580 records</div>
+    </div>
+    <div class="stat-card delay-3">
+        <div class="stat-icon navy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></div>
+        <div class="stat-value">130</div><div class="stat-label">Assignments</div>
+        <div class="stat-change neutral">2,407 submissions</div>
+    </div>
+    <div class="stat-card delay-4">
+        <div class="stat-icon sky"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="stat-value">78</div><div class="stat-label">Exams Scheduled</div>
+        <div class="stat-change neutral">1,716 results</div>
+    </div>
+</div>
+
+<div class="content-grid-3 animate-up delay-2">
+    <a asp-controller="CourseMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--amber-soft)">📚</div><div><div class="qa-title">Browse Courses</div><div class="qa-sub">View all courses & subjects</div></div></a>
+    <a asp-controller="CourseMvc" asp-action="Create" class="qa-card"><div class="qa-icon" style="background:var(--green-soft)">➕</div><div><div class="qa-title">Create Course</div><div class="qa-sub">Add new course</div></div></a>
+    <a asp-controller="AttendanceMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--teal-soft)">✅</div><div><div class="qa-title">Attendance</div><div class="qa-sub">Sessions · mark attendance</div></div></a>
+    <a asp-controller="AssignmentMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:rgba(27,42,74,0.08)">📝</div><div><div class="qa-title">Assignments</div><div class="qa-sub">Create · grade submissions</div></div></a>
+    <a asp-controller="ExamMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--sky-soft)">📊</div><div><div class="qa-title">Exams</div><div class="qa-sub">Schedule · record results</div></div></a>
+    <a asp-controller="ProgressMvc" asp-action="Analytics" class="qa-card"><div class="qa-icon" style="background:var(--rose-soft)">📈</div><div><div class="qa-title">Analytics</div><div class="qa-sub">Student progress reports</div></div></a>
+</div>
 }
-</style>
+
+<!-- ─── EXAM CONTROLLER DASHBOARD ─── -->
+@if (IsExamController())
+{
+<div style="margin-bottom:22px;display:flex;align-items:flex-end;justify-content:space-between">
+    <div>
+        <div class="page-eyebrow">Exam Management</div>
+        <div class="page-title">@Greeting(), @userFullName.Split(' ')[0]!</div>
+        <div class="page-subtitle">Schedule exams and record student results</div>
+    </div>
+    <div style="display:flex;gap:8px">
+        <a asp-controller="ExamMvc" asp-action="Create" class="btn-lms btn-lms-ghost">Schedule Exam</a>
+        <a asp-controller="ExamMvc" asp-action="RecordResults" class="btn-lms btn-lms-amber">Record Results</a>
+    </div>
+</div>
+
+<div class="stats-grid-3 animate-up">
+    <div class="stat-card delay-1">
+        <div class="stat-icon sky"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div class="stat-value">78</div><div class="stat-label">Total Exams</div>
+        <div class="stat-change neutral">Across 26 subjects</div>
+    </div>
+    <div class="stat-card delay-2">
+        <div class="stat-icon green"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/></svg></div>
+        <div class="stat-value">1,716</div><div class="stat-label">Results Recorded</div>
+        <div class="stat-change up"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>QUIZ · MIDTERM · FINAL</div>
+    </div>
+    <div class="stat-card delay-3">
+        <div class="stat-icon amber"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div class="stat-value">B+</div><div class="stat-label">System Avg Grade</div>
+        <div class="stat-change neutral">Across all exams</div>
+    </div>
+</div>
+
+<div class="content-grid-3 animate-up delay-2">
+    <a asp-controller="CourseMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--amber-soft)">📚</div><div><div class="qa-title">Courses & Subjects</div><div class="qa-sub">Browse for exam scheduling</div></div></a>
+    <a asp-controller="ExamMvc" asp-action="Index" class="qa-card"><div class="qa-icon" style="background:var(--sky-soft)">📊</div><div><div class="qa-title">All Exams</div><div class="qa-sub">View all scheduled exams</div></div></a>
+    <a asp-controller="ExamMvc" asp-action="Create" class="qa-card"><div class="qa-icon" style="background:var(--green-soft)">➕</div><div><div class="qa-title">Schedule Exam</div><div class="qa-sub">Create new exam</div></div></a>
+    <a asp-controller="ExamMvc" asp-action="RecordResults" class="qa-card"><div class="qa-icon" style="background:var(--teal-soft)">📋</div><div><div class="qa-title">Record Results</div><div class="qa-sub">Enter exam scores & grades</div></div></a>
+    <a asp-controller="ProgressMvc" asp-action="Analytics" class="qa-card"><div class="qa-icon" style="background:var(--rose-soft)">📈</div><div><div class="qa-title">Analytics</div><div class="qa-sub">Student performance reports</div></div></a>
+    <a asp-controller="ProgressMvc" asp-action="AtRisk" class="qa-card"><div class="qa-icon" style="background:rgba(124,58,237,0.08)">⚠️</div><div><div class="qa-title">At-Risk Students</div><div class="qa-sub">Low exam scores</div></div></a>
+</div>
+}
+
+<!-- ─── STUDENT DASHBOARD ─── -->
+@if (IsStudent())
+{
+<!-- Hero banner -->
+<div class="student-hero animate-up">
+    <div class="student-hero-bg"></div>
+    <div class="lms-avatar av-sky" style="width:52px;height:52px;font-size:18px;box-shadow:0 4px 16px rgba(2,132,199,0.35);flex-shrink:0;position:relative;z-index:1">
+        @(userFullName.Length > 0 ? userFullName[0].ToString().ToUpper() : "S")
+    </div>
+    <div style="position:relative;z-index:1">
+        <div style="font-size:11px;color:rgba(255,255,255,0.45);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px">@Greeting()</div>
+        <div style="font-family:var(--font-display);font-size:22px;color:white;font-weight:600;line-height:1.1">@userFullName</div>
+        <div style="font-size:12.5px;color:rgba(255,255,255,0.48);margin-top:4px">Track your learning journey across all enrolled courses</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:20px;position:relative;z-index:1">
+        <div class="student-hero-stat">
+            <div class="student-hero-stat-val" style="color:var(--amber-light)">📚</div>
+            <div class="student-hero-stat-label">Courses</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="student-hero-stat">
+            <div class="student-hero-stat-val">✅</div>
+            <div class="student-hero-stat-label">Attendance</div>
+        </div>
+        <div class="hero-divider"></div>
+        <div class="student-hero-stat">
+            <div class="student-hero-stat-val">🎯</div>
+            <div class="student-hero-stat-label">Exams</div>
+        </div>
+    </div>
+</div>
+
+<div class="content-grid-3 animate-up delay-2">
+    <a asp-controller="CourseMvc" asp-action="Index" class="qa-card">
+        <div class="qa-icon" style="background:var(--amber-soft)">📚</div>
+        <div><div class="qa-title">Browse Courses</div><div class="qa-sub">View all available courses</div></div>
+    </a>
+    <a asp-controller="EnrollmentMvc" asp-action="MyEnrollments" class="qa-card">
+        <div class="qa-icon" style="background:var(--sky-soft)">📋</div>
+        <div><div class="qa-title">My Enrollments</div><div class="qa-sub">Enrolled courses & batches</div></div>
+    </a>
+    <a asp-controller="AttendanceMvc" asp-action="MyAttendance" class="qa-card">
+        <div class="qa-icon" style="background:var(--teal-soft)">✅</div>
+        <div><div class="qa-title">My Attendance</div><div class="qa-sub">Check attendance records</div></div>
+    </a>
+    <a asp-controller="AssignmentMvc" asp-action="MyAssignments" class="qa-card">
+        <div class="qa-icon" style="background:rgba(27,42,74,0.08)">📝</div>
+        <div><div class="qa-title">My Assignments</div><div class="qa-sub">Submit & track assignments</div></div>
+    </a>
+    <a asp-controller="AssignmentMvc" asp-action="MyGrades" class="qa-card">
+        <div class="qa-icon" style="background:var(--green-soft)">🏆</div>
+        <div><div class="qa-title">My Grades</div><div class="qa-sub">Assignment scores & feedback</div></div>
+    </a>
+    <a asp-controller="ExamMvc" asp-action="MyResults" class="qa-card">
+        <div class="qa-icon" style="background:var(--rose-soft)">🎯</div>
+        <div><div class="qa-title">Exam Results</div><div class="qa-sub">Scores & grade history</div></div>
+    </a>
+    <a asp-controller="ProgressMvc" asp-action="MyProgress" class="qa-card" style="grid-column:1/-1">
+        <div class="qa-icon" style="background:var(--amber-soft)">📈</div>
+        <div>
+            <div class="qa-title">My Progress Report</div>
+            <div class="qa-sub">Attendance %, assignment scores, exam grades — full academic overview across all courses</div>
+        </div>
+        <div style="margin-left:auto;color:var(--text-dim)">→</div>
+    </a>
+</div>
+}

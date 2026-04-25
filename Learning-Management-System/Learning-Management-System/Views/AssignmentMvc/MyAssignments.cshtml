@@ -5,69 +5,49 @@
     var subjectId = ViewBag.SubjectId;
 }
 
-<div class="mb-4">
-    <h4 class="fw-bold mb-1">📝 My Assignments</h4>
-    <p class="text-muted mb-0">Submit your assignments and track their status</p>
+<div class="page-header">
+    <div>
+        <div class="page-title">My Assignments</div>
+        <div class="page-sub">Submit your assignments and track their status</div>
+    </div>
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">@TempData["Error"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
-}
-
-<!-- Filter -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Course</label>
-                <select class="form-select form-select-sm" id="courseFilter">
-                    <option value="">Select Course</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <select class="form-select form-select-sm" id="subjectFilter">
-                    <option value="">Select Course First</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="filterAssignments()">Load</button>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Course</label>
+            <select class="lms-select" id="courseFilter"><option value="">Select Course</option></select>
         </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Subject</label>
+            <select class="lms-select" id="subjectFilter"><option value="">Select Course First</option></select>
+        </div>
+        <button class="btn-lms-primary" onclick="filterAssignments()">Load</button>
     </div>
 </div>
 
 <div id="assignmentsList"></div>
 
 <!-- Submit Modal -->
-<div class="modal fade" id="submitModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header">
-                <h5 class="modal-title">Submit Assignment</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" asp-action="Submit">
-                <div class="modal-body">
-                    <input type="hidden" name="assignmentId" id="submitAssignmentId" />
-                    <p class="fw-semibold" id="submitAssignmentTitle"></p>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Submission URL (optional)</label>
-                        <input type="url" name="fileUrl" class="form-control" placeholder="https://... (link to your work)" />
-                        <div class="form-text">Paste a link to your document, GitHub repo, etc.</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                </div>
-            </form>
+<div id="submitModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
+    <div class="lms-card" style="width:480px;max-width:90vw">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <span style="font-weight:600;font-size:16px">Submit Assignment</span>
+            <button onclick="document.getElementById('submitModal').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1">&times;</button>
         </div>
+        <form method="post" asp-action="Submit" style="display:flex;flex-direction:column;gap:14px">
+            <input type="hidden" name="assignmentId" id="submitAssignmentId" />
+            <div id="submitAssignmentTitle" style="font-weight:600;color:var(--text)"></div>
+            <div class="lms-form-group">
+                <label class="lms-label">Submission URL (optional)</label>
+                <input type="url" name="fileUrl" class="lms-input" placeholder="https://... (link to your work)" />
+                <span style="font-size:12px;color:var(--text-muted);margin-top:4px;display:block">Paste a link to your document, GitHub repo, etc.</span>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:flex-end">
+                <button type="button" class="btn-lms-ghost" onclick="document.getElementById('submitModal').style.display='none'">Cancel</button>
+                <button type="submit" class="btn-lms-primary">Submit</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -106,41 +86,36 @@
     function openSubmitModal(assignmentId, title) {
         document.getElementById('submitAssignmentId').value = assignmentId;
         document.getElementById('submitAssignmentTitle').textContent = title;
-        new bootstrap.Modal(document.getElementById('submitModal')).show();
+        document.getElementById('submitModal').style.display = 'flex';
     }
 
     function renderAssignments(assignments) {
         const container = document.getElementById('assignmentsList');
         if (!assignments || assignments.length === 0) {
-            container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
-                <div class="fs-1 mb-2">📝</div><h5 class="text-muted">No assignments found</h5>
-                <p class="text-muted small">Select a subject to see its assignments</p>
-            </div></div>`;
+            container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No assignments found</div>
+                <div style="font-size:13px;color:var(--text-muted)">Select a subject to see its assignments</div>
+            </div>`;
             return;
         }
-
         const now = new Date();
-        container.innerHTML = `<div class="row g-4">` +
+        container.innerHTML = `<div class="content-grid-3">` +
             assignments.map(a => {
                 const due = new Date(a.dueDate);
                 const overdue = due < now;
-                return `<div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body p-4">
-                            <div class="d-flex justify-content-between mb-2">
-                                <span class="badge ${overdue ? 'bg-danger' : 'bg-primary'}">${overdue ? 'Overdue' : 'Active'}</span>
-                                <small class="text-muted">Max: ${a.maxScore} pts</small>
-                            </div>
-                            <h5 class="fw-semibold mb-1">${a.title}</h5>
-                            <p class="text-muted small mb-2">${a.description || ''}</p>
-                            <p class="small mb-3"><strong class="text-${overdue ? 'danger' : 'dark'}">Due:</strong>
-                                ${due.toLocaleDateString()} ${due.toLocaleTimeString()}</p>
-                            <button class="btn btn-primary btn-sm w-100"
-                                    onclick="openSubmitModal(${a.id}, '${a.title?.replace("'","\\'")}')">
-                                Submit Assignment
-                            </button>
-                        </div>
+                return `<div class="lms-card animate-up">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                        <span class="lms-badge" style="background:${overdue ? 'var(--rose-soft)' : 'var(--sky-soft)'};color:${overdue ? 'var(--rose)' : 'var(--sky)'}">${overdue ? 'Overdue' : 'Active'}</span>
+                        <span style="font-size:12px;color:var(--text-muted)">Max: ${a.maxScore} pts</span>
                     </div>
+                    <div style="font-weight:700;font-size:15px;margin-bottom:6px">${a.title}</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">${a.description || ''}</div>
+                    <div style="font-size:12.5px;margin-bottom:16px"><span style="color:var(--text-muted)">Due:</span> <strong style="color:${overdue ? 'var(--rose)' : 'var(--text)'}">${due.toLocaleDateString()} ${due.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</strong></div>
+                    <button class="btn-lms-primary btn-lms-sm" style="width:100%"
+                            onclick="openSubmitModal(${a.id}, '${(a.title||'').replace(/'/g,"\\'")}')">
+                        Submit Assignment
+                    </button>
                 </div>`;
             }).join('') + `</div>`;
     }

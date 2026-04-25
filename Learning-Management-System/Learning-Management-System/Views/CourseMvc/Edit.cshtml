@@ -2,58 +2,60 @@
     ViewData["Title"] = "Edit Course";
     var courseId = ViewBag.CourseId;
     var courseJson = ViewBag.CourseJson as string ?? "{}";
+    ViewData["Breadcrumb"] = $"<a href='/CourseMvc/Index' style='color:var(--text-muted);text-decoration:none'>Courses</a> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <a href='/CourseMvc/Details/{courseId}' style='color:var(--text-muted);text-decoration:none'>Details</a> <span style='margin:0 6px;color:var(--border-strong)'>›</span> <span class='current'>Edit</span>";
 }
 
-<nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Index">Courses</a></li>
-        <li class="breadcrumb-item"><a asp-controller="CourseMvc" asp-action="Details" asp-route-id="@courseId">Details</a></li>
-        <li class="breadcrumb-item active">Edit</li>
-    </ol>
-</nav>
+<div class="page-header">
+    <div>
+        <div class="page-title">Edit Course</div>
+        <div class="page-sub">Update course information</div>
+    </div>
+    <a asp-action="Details" asp-route-id="@courseId" class="btn-lms-ghost">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Details
+    </a>
+</div>
 
-<div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="fw-bold mb-0">✏️ Edit Course</h5>
+<div style="max-width:560px">
+    <div class="lms-card">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="lms-alert danger" style="margin-bottom:20px">
+                <div class="alert-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
+                <div>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    { <div>@error.ErrorMessage</div> }
+                </div>
             </div>
-            <div class="card-body p-4">
-                @if (!ViewData.ModelState.IsValid)
-                {
-                    <div class="alert alert-danger">
-                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        { <div>@error.ErrorMessage</div> }
-                    </div>
-                }
-                <form method="post" asp-action="Edit" asp-route-id="@courseId" id="editForm">
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Course Title *</label>
-                        <input type="text" name="title" id="fTitle" class="form-control" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Description</label>
-                        <textarea name="description" id="fDesc" class="form-control" rows="4"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold">Credits *</label>
-                        <input type="number" name="credits" id="fCredits" class="form-control" min="1" max="10" required />
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-semibold">Status</label>
-                        <select name="status" id="fStatus" class="form-select">
-                            <option value="ACTIVE">Active</option>
-                            <option value="INACTIVE">Inactive</option>
-                            <option value="ARCHIVED">Archived</option>
-                        </select>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary px-4">Save Changes</button>
-                        <a asp-action="Details" asp-route-id="@courseId" class="btn btn-outline-secondary">Cancel</a>
-                    </div>
-                </form>
+        }
+        <form method="post" asp-action="Edit" asp-route-id="@courseId" id="editForm" style="display:flex;flex-direction:column;gap:18px">
+            <div class="lms-form-group">
+                <label class="lms-label">Course Title <span style="color:var(--rose)">*</span></label>
+                <input type="text" name="title" id="fTitle" class="lms-input" required />
             </div>
-        </div>
+            <div class="lms-form-group">
+                <label class="lms-label">Description</label>
+                <textarea name="description" id="fDesc" class="lms-textarea" rows="4"></textarea>
+            </div>
+            <div class="lms-form-group">
+                <label class="lms-label">Credits <span style="color:var(--rose)">*</span></label>
+                <input type="number" name="credits" id="fCredits" class="lms-input" min="1" max="10" required />
+            </div>
+            <div class="lms-form-group">
+                <label class="lms-label">Status</label>
+                <select name="status" id="fStatus" class="lms-select">
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="ARCHIVED">Archived</option>
+                </select>
+            </div>
+            <div style="display:flex;gap:10px;padding-top:4px">
+                <button type="submit" class="btn-lms-primary">Save Changes</button>
+                <a asp-action="Details" asp-route-id="@courseId" class="btn-lms-ghost">Cancel</a>
+            </div>
+        </form>
     </div>
 </div>
 

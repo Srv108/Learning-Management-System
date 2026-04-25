@@ -5,27 +5,24 @@
     var subjectId = ViewBag.SubjectId;
 }
 
-<div class="mb-4">
-    <h4 class="fw-bold mb-1">🏆 My Grades</h4>
-    <p class="text-muted mb-0">View your assignment grades and feedback</p>
+<div class="page-header">
+    <div>
+        <div class="page-title">My Grades</div>
+        <div class="page-sub">View your assignment grades and feedback</div>
+    </div>
 </div>
 
-<!-- Filter -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Course</label>
-                <select class="form-select form-select-sm" id="courseFilter"><option value="">Select Course</option></select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small fw-semibold">Subject</label>
-                <select class="form-select form-select-sm" id="subjectFilter"><option value="">Select Course First</option></select>
-            </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary btn-sm w-100" onclick="filter()">Load</button>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Course</label>
+            <select class="lms-select" id="courseFilter"><option value="">Select Course</option></select>
         </div>
+        <div class="lms-form-group" style="margin-bottom:0">
+            <label class="lms-label">Subject</label>
+            <select class="lms-select" id="subjectFilter"><option value="">Select Course First</option></select>
+        </div>
+        <button class="btn-lms-primary" onclick="filter()">Load</button>
     </div>
 </div>
 
@@ -65,32 +62,31 @@
 
     const container = document.getElementById('gradesContainer');
     if (assignments && assignments.length > 0) {
-        container.innerHTML = `<div class="card border-0 shadow-sm">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr><th>Assignment</th><th>Due Date</th><th>Max Score</th><th>Your Score</th><th>Status</th></tr>
-                        </thead>
-                        <tbody>
-                            ${assignments.map(a => `
-                            <tr>
-                                <td class="fw-semibold">${a.title}</td>
-                                <td class="small text-muted">${new Date(a.dueDate).toLocaleDateString()}</td>
-                                <td>${a.maxScore}</td>
-                                <td><span class="badge bg-secondary">Check submissions</span></td>
-                                <td><a href="/AssignmentMvc/MyAssignments" class="btn btn-sm btn-outline-primary">Submit</a></td>
-                            </tr>`).join('')}
-                        </tbody>
-                    </table>
-                </div>
+        container.innerHTML = `<div class="lms-card" style="padding:0">
+            <div style="overflow-x:auto">
+                <table class="lms-table">
+                    <thead>
+                        <tr><th>Assignment</th><th>Due Date</th><th>Max Score</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        ${assignments.map(a => `
+                        <tr>
+                            <td style="font-weight:600">${a.title}</td>
+                            <td style="font-size:12.5px;color:var(--text-muted)">${new Date(a.dueDate).toLocaleDateString()}</td>
+                            <td>${a.maxScore}</td>
+                            <td><span class="lms-badge" style="background:var(--bg-muted);color:var(--text-muted)">Check submissions</span></td>
+                            <td><a href="/AssignmentMvc/MyAssignments" class="btn-lms-ghost btn-lms-sm">Submit</a></td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>
             </div>
         </div>`;
     } else {
-        container.innerHTML = `<div class="card border-0 shadow-sm"><div class="card-body text-center py-5">
-            <div class="fs-1 mb-2">🏆</div><h5 class="text-muted">No grades yet</h5>
-            <p class="text-muted small">Select a subject to view your grades</p>
-        </div></div>`;
+        container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+            <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No grades yet</div>
+            <div style="font-size:13px;color:var(--text-muted)">Select a subject to view your grades</div>
+        </div>`;
     }
 </script>
 }

@@ -5,24 +5,21 @@
     var courseId = ViewBag.CourseId;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="page-header">
     <div>
-        <h4 class="fw-bold mb-1">📈 Course Analytics</h4>
-        <p class="text-muted mb-0">Student performance overview per course</p>
+        <div class="page-title">Course Analytics</div>
+        <div class="page-sub">Student performance overview per course</div>
     </div>
-    <a asp-action="AtRisk" class="btn btn-outline-danger btn-sm">⚠️ At-Risk Students</a>
+    <a asp-action="AtRisk" class="btn-lms-danger btn-lms-sm">At-Risk Students</a>
 </div>
 
-<!-- Course Selector -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-body py-3">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-5">
-                <label class="form-label small fw-semibold">Select Course</label>
-                <select class="form-select" id="courseSelect" onchange="if(this.value) window.location.href='/ProgressMvc/Analytics?courseId='+this.value">
-                    <option value="">Select a course...</option>
-                </select>
-            </div>
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="display:flex;gap:12px;align-items:flex-end">
+        <div class="lms-form-group" style="margin-bottom:0;flex:1;max-width:360px">
+            <label class="lms-label">Select Course</label>
+            <select class="lms-select" id="courseSelect" onchange="if(this.value) window.location.href='/ProgressMvc/Analytics?courseId='+this.value">
+                <option value="">Select a course...</option>
+            </select>
         </div>
     </div>
 </div>
@@ -30,11 +27,9 @@
 <div id="analyticsContainer">
     @if (courseId == null)
     {
-        <div class="card border-0 shadow-sm">
-            <div class="card-body text-center py-5">
-                <div class="fs-1 mb-2">📈</div>
-                <h5 class="text-muted">Select a course to view analytics</h5>
-            </div>
+        <div class="lms-card" style="text-align:center;padding:48px">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">Select a course to view analytics</div>
         </div>
     }
 </div>
@@ -48,11 +43,25 @@
     const courseSelect = document.getElementById('courseSelect');
     courses.forEach(c => {
         const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = c.title;
+        opt.value = c.id; opt.textContent = c.title;
         if (c.id == selectedCourseId) opt.selected = true;
         courseSelect.appendChild(opt);
     });
+
+    const gradeColor = g => {
+        if (!g) return 'var(--text-muted)';
+        if (g === 'A+' || g === 'A') return 'var(--green)';
+        if (g === 'B') return 'var(--sky)';
+        if (g === 'C' || g === 'D') return 'var(--amber)';
+        return 'var(--rose)';
+    };
+    const gradeStyle = g => {
+        if (!g) return 'background:var(--bg-muted);color:var(--text-muted)';
+        if (g === 'A+' || g === 'A') return 'background:var(--green-soft);color:var(--green)';
+        if (g === 'B') return 'background:var(--sky-soft);color:var(--sky)';
+        if (g === 'C' || g === 'D') return 'background:var(--amber-soft);color:var(--amber)';
+        return 'background:var(--rose-soft);color:var(--rose)';
+    };
 
     if (analyticsData && analyticsData.summary) {
         const s = analyticsData.summary;
@@ -60,92 +69,51 @@
         const students = analyticsData.students || [];
 
         document.getElementById('analyticsContainer').innerHTML = `
-            <div class="row g-4 mb-4">
-                <div class="col-md-2">
-                    <div class="card border-0 shadow-sm text-center py-3">
-                        <div class="text-muted small mb-1">Total Students</div>
-                        <div class="fw-bold fs-3">${s.totalStudents || 0}</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card border-0 shadow-sm text-center py-3">
-                        <div class="text-muted small mb-1">Avg Attendance</div>
-                        <div class="fw-bold fs-3" style="color:${(s.averageAttendance||0)>=75?'#059669':'#dc2626'}">${(s.averageAttendance||0).toFixed(1)}%</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card border-0 shadow-sm text-center py-3">
-                        <div class="text-muted small mb-1">Avg Assignment</div>
-                        <div class="fw-bold fs-3 text-info">${(s.averageAssignmentScore||0).toFixed(1)}</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card border-0 shadow-sm text-center py-3">
-                        <div class="text-muted small mb-1">Avg Exam Score</div>
-                        <div class="fw-bold fs-3" style="color:${(s.averageExamScore||0)>=50?'#059669':'#dc2626'}">${(s.averageExamScore||0).toFixed(1)}</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card border-0 shadow-sm text-center py-3">
-                        <div class="text-muted small mb-1">Pass Rate</div>
-                        <div class="fw-bold fs-3" style="color:${(s.passRate||0)>=50?'#059669':'#dc2626'}">${(s.passRate||0).toFixed(1)}%</div>
-                    </div>
-                </div>
-                <div class="col-md-2">
-                    <div class="card border-0 shadow-sm text-center py-3">
-                        <div class="text-muted small mb-1">Grade A+/A</div>
-                        <div class="fw-bold fs-3 text-success">${(gd.aPlus||0) + (gd.a||0)}</div>
-                    </div>
-                </div>
+            <div class="stats-grid-6" style="margin-bottom:24px">
+                <div class="stat-card"><div class="stat-label">Total Students</div><div class="stat-val">${s.totalStudents || 0}</div></div>
+                <div class="stat-card"><div class="stat-label">Avg Attendance</div><div class="stat-val" style="color:${(s.averageAttendance||0)>=75?'var(--green)':'var(--rose)'}">${(s.averageAttendance||0).toFixed(1)}%</div></div>
+                <div class="stat-card"><div class="stat-label">Avg Assignment</div><div class="stat-val" style="color:var(--sky)">${(s.averageAssignmentScore||0).toFixed(1)}</div></div>
+                <div class="stat-card"><div class="stat-label">Avg Exam Score</div><div class="stat-val" style="color:${(s.averageExamScore||0)>=50?'var(--green)':'var(--rose)'}">${(s.averageExamScore||0).toFixed(1)}</div></div>
+                <div class="stat-card"><div class="stat-label">Pass Rate</div><div class="stat-val" style="color:${(s.passRate||0)>=50?'var(--green)':'var(--rose)'}">${(s.passRate||0).toFixed(1)}%</div></div>
+                <div class="stat-card"><div class="stat-label">Grade A+/A</div><div class="stat-val" style="color:var(--green)">${(gd.aPlus||0) + (gd.a||0)}</div></div>
             </div>
 
-            <!-- Grade Distribution -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-white fw-semibold py-3">Grade Distribution</div>
-                        <div class="card-body p-4">
-                            ${renderGradeBar('A+', gd.aPlus||0, s.totalStudents||1, '#059669')}
-                            ${renderGradeBar('A', gd.a||0, s.totalStudents||1, '#10b981')}
-                            ${renderGradeBar('B', gd.b||0, s.totalStudents||1, '#0891b2')}
-                            ${renderGradeBar('C', gd.c||0, s.totalStudents||1, '#d97706')}
-                            ${renderGradeBar('D', gd.d||0, s.totalStudents||1, '#f59e0b')}
-                            ${renderGradeBar('F', gd.f||0, s.totalStudents||1, '#dc2626')}
-                        </div>
-                    </div>
+            <div style="display:grid;grid-template-columns:280px 1fr;gap:20px">
+                <div class="lms-card">
+                    <div style="font-weight:600;font-size:14px;margin-bottom:16px">Grade Distribution</div>
+                    ${renderGradeBar('A+', gd.aPlus||0, s.totalStudents||1, 'var(--green)')}
+                    ${renderGradeBar('A', gd.a||0, s.totalStudents||1, '#10b981')}
+                    ${renderGradeBar('B', gd.b||0, s.totalStudents||1, 'var(--sky)')}
+                    ${renderGradeBar('C', gd.c||0, s.totalStudents||1, 'var(--amber)')}
+                    ${renderGradeBar('D', gd.d||0, s.totalStudents||1, '#f59e0b')}
+                    ${renderGradeBar('F', gd.f||0, s.totalStudents||1, 'var(--rose)')}
                 </div>
-                <div class="col-md-8">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-header bg-white fw-semibold py-3">Student Performance</div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr><th>Student</th><th>Attendance</th><th>Assignments</th><th>Exams</th><th>Grade</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        ${students.map(st => `
-                                            <tr>
-                                                <td>
-                                                    <div class="fw-semibold">${st.studentName || '-'}</div>
-                                                    <div class="text-muted small">${st.email || ''}</div>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center gap-2">
-                                                        <div class="bg-light rounded flex-grow-1" style="height:6px">
-                                                            <div style="height:100%;width:${Math.min(st.attendancePercentage||0,100)}%;background:${(st.attendancePercentage||0)>=75?'#059669':'#dc2626'};border-radius:3px"></div>
-                                                        </div>
-                                                        <small>${(st.attendancePercentage||0).toFixed(0)}%</small>
-                                                    </div>
-                                                </td>
-                                                <td>${(st.assignmentAvgScore||0).toFixed(1)}</td>
-                                                <td>${(st.examAvgScore||0).toFixed(1)}</td>
-                                                <td><span class="badge" style="background:${gradeColor(st.overallGrade)}">${st.overallGrade||'N/A'}</span></td>
-                                            </tr>`).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                <div class="lms-card" style="padding:0">
+                    <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px">Student Performance</div>
+                    <div style="overflow-x:auto">
+                        <table class="lms-table">
+                            <thead><tr><th>Student</th><th>Attendance</th><th>Assignments</th><th>Exams</th><th>Grade</th></tr></thead>
+                            <tbody>
+                                ${students.map(st => `
+                                    <tr>
+                                        <td>
+                                            <div style="font-weight:600">${st.studentName || '-'}</div>
+                                            <div style="font-size:12.5px;color:var(--text-muted)">${st.email || ''}</div>
+                                        </td>
+                                        <td>
+                                            <div style="display:flex;align-items:center;gap:8px">
+                                                <div class="lms-progress" style="flex:1">
+                                                    <div class="lms-progress-fill" style="width:${Math.min(st.attendancePercentage||0,100)}%;background:${(st.attendancePercentage||0)>=75?'var(--green)':'var(--rose)'}"></div>
+                                                </div>
+                                                <span style="font-size:12px;white-space:nowrap">${(st.attendancePercentage||0).toFixed(0)}%</span>
+                                            </div>
+                                        </td>
+                                        <td>${(st.assignmentAvgScore||0).toFixed(1)}</td>
+                                        <td>${(st.examAvgScore||0).toFixed(1)}</td>
+                                        <td><span class="lms-badge" style="${gradeStyle(st.overallGrade)}">${st.overallGrade||'N/A'}</span></td>
+                                    </tr>`).join('')}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>`;
@@ -153,22 +121,19 @@
 
     function renderGradeBar(grade, count, total, color) {
         const pct = total > 0 ? (count / total * 100) : 0;
-        return `<div class="mb-2">
-            <div class="d-flex justify-content-between small mb-1">
-                <span><strong>${grade}</strong></span><span>${count} students</span>
+        return `<div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px">
+                <strong>${grade}</strong><span style="color:var(--text-muted)">${count} students</span>
             </div>
-            <div class="bg-light rounded" style="height:8px">
-                <div style="height:100%;width:${pct.toFixed(1)}%;background:${color};border-radius:4px;transition:width .5s"></div>
+            <div class="lms-progress">
+                <div class="lms-progress-fill" style="width:${pct.toFixed(1)}%;background:${color}"></div>
             </div>
         </div>`;
     }
-
-    function gradeColor(g) {
-        if (!g) return '#6b7280';
-        if (g === 'A+' || g === 'A') return '#059669';
-        if (g === 'B') return '#0891b2';
-        if (g === 'C') return '#d97706';
-        return '#dc2626';
-    }
 </script>
+<style>
+.stats-grid-6 { display:grid;grid-template-columns:repeat(6,1fr);gap:16px }
+@@media(max-width:960px){.stats-grid-6{grid-template-columns:repeat(3,1fr)}}
+@@media(max-width:600px){.stats-grid-6{grid-template-columns:repeat(2,1fr)}}
+</style>
 }
