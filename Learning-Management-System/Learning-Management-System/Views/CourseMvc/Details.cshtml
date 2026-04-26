@@ -105,6 +105,19 @@
     const canManage = @Html.Raw(canManage.ToString().ToLower());
     const canDelete = @Html.Raw(canDelete.ToString().ToLower());
     const canAssignTeacher = @Html.Raw((userRole == "Admin" || userRole == "CourseCoordinator").ToString().ToLower());
+    const isStudent = @Html.Raw((userRole == "Student").ToString().ToLower());
+
+    function batchButtons(b) {
+        if (isStudent) {
+            return `<form method="post" action="/EnrollmentMvc/SelfEnroll" style="display:inline">
+                        <input type="hidden" name="batchId" value="${b.id}">
+                        <button type="submit" class="btn-lms-primary btn-lms-sm">Enroll in Batch</button>
+                    </form>
+                    <a href="/EnrollmentMvc/MyEnrollments" class="btn-lms-ghost btn-lms-sm">My Enrollments</a>`;
+        }
+        return `<a href="/EnrollmentMvc/Index?batchId=${b.id}" class="btn-lms-ghost btn-lms-sm">Enrollment</a>
+                <a href="/AttendanceMvc/Index?batchId=${b.id}" class="btn-lms-ghost btn-lms-sm">Attendance</a>`;
+    }
 
     // Render course header
     document.getElementById('courseDetail').innerHTML = `
@@ -164,10 +177,7 @@
                     ${b.endDate ? new Date(b.endDate).toLocaleDateString() : ''}
                     &nbsp;·&nbsp; ${b.enrollmentCount || 0} students
                 </div>
-                <div style="display:flex;gap:6px">
-                    <a href="/EnrollmentMvc/Index?batchId=${b.id}" class="btn-lms-ghost btn-lms-sm">Enrollment</a>
-                    <a href="/AttendanceMvc/Index?batchId=${b.id}" class="btn-lms-ghost btn-lms-sm">Attendance</a>
-                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">${batchButtons(b)}</div>
             </div>`).join('');
     } else {
         batchesEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted);font-size:13px">No batches created yet</div>`;

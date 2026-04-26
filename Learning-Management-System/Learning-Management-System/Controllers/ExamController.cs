@@ -76,8 +76,39 @@ namespace Learning_Management_System.Controllers
             return Ok(exam);
         }
 
+        /// <summary>
+        /// Get all exam results for a specific student across all subjects
+        /// </summary>
+        [HttpGet("student/{studentId}/all-results")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetStudentAllResults(string studentId)
+        {
+            var results = await _dbContext.ExamResults
+                .Include(r => r.Exam)
+                    .ThenInclude(e => e!.Subject)
+                        .ThenInclude(s => s!.Course)
+                .Where(r => r.StudentId == studentId && !r.IsDeleted)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            return Ok(results.Select(r => new
+            {
+                id = r.Id,
+                examId = r.ExamId,
+                examTitle = r.Exam?.Title ?? "",
+                examType = r.Exam?.ExamType ?? "",
+                maxScore = r.Exam?.MaxScore ?? 0,
+                subjectName = r.Exam?.Subject?.Name ?? "",
+                courseName = r.Exam?.Subject?.Course?.Title ?? "",
+                marks = r.Marks ?? 0,
+                grade = r.Grade ?? "",
+                examDate = r.Exam?.ExamDate,
+                createdAt = r.CreatedAt
+            }));
+        }
+
         [HttpPost]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> CreateExam([FromBody] CreateExamDto dto)
         {
             if (!ModelState.IsValid)
@@ -114,7 +145,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> UpdateExam(long id, [FromBody] UpdateExamDto dto)
         {
             if (!ModelState.IsValid)
@@ -154,7 +185,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpGet("{examId}/results")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,Student")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController,Student")]
         public async Task<IActionResult> GetResultsForExam(long examId)
         {
             var exists = await _dbContext.Exams.AnyAsync(e => !e.IsDeleted && e.Id == examId);
@@ -187,7 +218,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpGet("result/{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,Student")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController,Student")]
         public async Task<IActionResult> GetResult(long id)
         {
             var result = await _dbContext.ExamResults
@@ -219,7 +250,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPost("result")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> AddResult([FromBody] CreateExamResultDto dto)
         {
             if (!ModelState.IsValid)
@@ -260,7 +291,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpPut("result/{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator,Teacher")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> UpdateResult(long id, [FromBody] CreateExamResultDto dto)
         {
             if (!ModelState.IsValid)

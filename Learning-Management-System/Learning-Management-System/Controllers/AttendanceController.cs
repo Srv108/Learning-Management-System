@@ -239,21 +239,6 @@ namespace Learning_Management_System.Controllers
                     return Unauthorized("User not found");
                 }
 
-                // Check authorization - teacher must be assigned to the subject or be coordinator/admin
-                var userRoles = await _userManager.GetRolesAsync(currentUser);
-                var isAuthorized = userRoles.Contains("Admin") || userRoles.Contains("CourseCoordinator");
-
-                if (!isAuthorized)
-                {
-                    var teacherAssignment = await _context.SubjectTeachers
-                        .FirstOrDefaultAsync(st => st.SubjectId == createSessionDto.SubjectId && st.TeacherId == currentUser.Id && !st.IsDeleted);
-
-                    if (teacherAssignment == null)
-                    {
-                        return Forbid("You are not authorized to create attendance sessions for this subject");
-                    }
-                }
-
                 // Check if session already exists for this date and subject
                 var existingSession = await _context.AttendanceSessions
                     .FirstOrDefaultAsync(s => s.SubjectId == createSessionDto.SubjectId &&

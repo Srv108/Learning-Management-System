@@ -124,14 +124,6 @@ namespace Learning_Management_System.Controllers
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null) return Unauthorized("User not found");
 
-                var roles = await _userManager.GetRolesAsync(user);
-                var authorized = roles.Contains("Admin") || roles.Contains("CourseCoordinator");
-                if (!authorized)
-                {
-                    var assigned = await _context.SubjectTeachers.AnyAsync(st => st.SubjectId == dto.SubjectId && st.TeacherId == user.Id && !st.IsDeleted);
-                    if (!assigned) return Forbid("No permission to create assignments for this subject");
-                }
-
                 var assignment = new Assignment
                 {
                     SubjectId = dto.SubjectId,
@@ -183,14 +175,6 @@ namespace Learning_Management_System.Controllers
 
                 var user = await _userManager.GetUserAsync(User);
                 if (user == null) return Unauthorized("User not found");
-
-                var roles = await _userManager.GetRolesAsync(user);
-                var authorized = roles.Contains("Admin") || roles.Contains("CourseCoordinator");
-                if (!authorized)
-                {
-                    var assigned = await _context.SubjectTeachers.AnyAsync(st => st.SubjectId == assignment.SubjectId && st.TeacherId == user.Id && !st.IsDeleted);
-                    if (!assigned) return Forbid("No permission to update assignment");
-                }
 
                 if (!string.IsNullOrWhiteSpace(dto.Title)) assignment.Title = dto.Title;
                 if (dto.Description != null) assignment.Description = dto.Description;

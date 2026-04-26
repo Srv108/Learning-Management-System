@@ -86,9 +86,25 @@ namespace Learning_Management_System.Controllers
                     .OrderByDescending(p => p.LastUpdated)
                     .ToListAsync();
 
+                // If no pre-calculated records, auto-compute from enrollments
                 if (!progressList.Any())
                 {
-                    return Ok(new { message = "No progress records found", data = new List<object>() });
+                    var enrolledCourseIds = await _context.Enrollments
+                        .Include(e => e.Batch)
+                        .Where(e => e.StudentId == studentId && !e.IsDeleted)
+                        .Select(e => e.Batch.CourseId)
+                        .Distinct()
+                        .ToListAsync();
+
+                    foreach (var cId in enrolledCourseIds)
+                    {
+                        var computed = await ComputeAndSaveProgress(studentId, cId);
+                        if (computed != null)
+                            progressList.Add(computed);
+                    }
+
+                    if (!progressList.Any())
+                        return Ok(new { message = "No progress records found. Enroll in a course to begin.", data = new List<object>() });
                 }
 
                 var data = progressList.Select(p => new
@@ -647,6 +663,155 @@ namespace Learning_Management_System.Controllers
             };
         }
 
+        /// <summary>
+        /// Generate demo/test data for a student (Admin/Coordinator only)
+        /// </summary>
+        [HttpPost("seed-demo/{studentId}")]
+        [Authorize(Roles = "Admin,CourseCoordinator")]
+        public async Task<IActionResult> SeedDemoDataForStudent(string studentId)
+        {
+            try
+            {
+                var student = await _userManager.FindByIdAsync(studentId);
+                if (student == null) return NotFound(new { message = "Student not found" });
+
+                var studentRoles = await _userManager.GetRolesAsync(student);
+                if (!studentRoles.Contains("Student"))
+                    return BadRequest(new { message = "User is not a student" });
+
+                var rng = new Random();
+                int recordsCreated = 0;
+
+                var teachers = await _userManager.GetUsersInRoleAsync("Teacher");
+                var graderId = teachers.FirstOrDefault()?.Id ?? studentId;
+
+                var courses = await _context.Courses
+                    .Include(c => c.Subjects)
+                    .Include(c => c.Batches)
+                    .Where(c => !c.IsDeleted)
+                    .ToListAsync();
+
+                foreach (var course in courses)
+                {
+                    var batch = course.Batches.FirstOrDefault(b => !b.IsDeleted);
+                    if (batch == null) continue;
+
+                    // Enroll student in batch if not already enrolled
+                    var existingEnrollment = await _context.Enrollments
+                        .FirstOrDefaultAsync(e => e.StudentId == studentId && e.BatchId == batch.Id && !e.IsDeleted);
+
+                    if (existingEnrollment == null)
+                    {
+                        _context.Enrollments.Add(new Enrollment
+                        {
+                            StudentId = studentId,
+                            BatchId = batch.Id,
+                            Status = "ACTIVE",
+                            EnrolledAt = DateTime.UtcNow,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                        await _context.SaveChangesAsync();
+                        recordsCreated++;
+                    }
+
+                    var subjectIds = course.Subjects.Where(s => !s.IsDeleted).Select(s => s.Id).ToList();
+
+                    foreach (var subjectId in subjectIds)
+                    {
+                        // Attendance records for existing sessions
+                        var sessions = await _context.AttendanceSessions
+                            .Where(s => s.SubjectId == subjectId).ToListAsync();
+
+                        foreach (var session in sessions)
+                        {
+                            var existing = await _context.AttendanceRecords
+                                .FirstOrDefaultAsync(r => r.SessionId == session.Id && r.StudentId == studentId);
+                            if (existing == null)
+                            {
+                                _context.AttendanceRecords.Add(new AttendanceRecord
+                                {
+                                    SessionId = session.Id,
+                                    StudentId = studentId,
+                                    Status = rng.Next(100) > 20 ? "PRESENT" : "ABSENT",
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                                recordsCreated++;
+                            }
+                        }
+
+                        // Assignment submissions and grades
+                        var assignments = await _context.Assignments
+                            .Where(a => a.SubjectId == subjectId && !a.IsDeleted).ToListAsync();
+
+                        foreach (var assignment in assignments)
+                        {
+                            var existingSub = await _context.Submissions
+                                .FirstOrDefaultAsync(s => s.AssignmentId == assignment.Id && s.StudentId == studentId);
+                            if (existingSub == null)
+                            {
+                                var sub = new Submission
+                                {
+                                    AssignmentId = assignment.Id,
+                                    StudentId = studentId,
+                                    FileUrl = $"demo/assignment_{assignment.Id}.pdf",
+                                    SubmittedAt = DateTime.UtcNow.AddDays(-rng.Next(1, 10)),
+                                    Status = "SUBMITTED",
+                                    CreatedAt = DateTime.UtcNow
+                                };
+                                _context.Submissions.Add(sub);
+                                await _context.SaveChangesAsync();
+
+                                var score = rng.Next(60, 100);
+                                _context.AssignmentGrades.Add(new AssignmentGrade
+                                {
+                                    SubmissionId = sub.Id,
+                                    Score = score,
+                                    Feedback = score >= 80 ? "Excellent work!" : score >= 65 ? "Good effort." : "Needs improvement.",
+                                    GradedById = graderId,
+                                    GradedAt = DateTime.UtcNow,
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                                recordsCreated++;
+                            }
+                        }
+
+                        // Exam results
+                        var exams = await _context.Exams
+                            .Where(e => e.SubjectId == subjectId && !e.IsDeleted).ToListAsync();
+
+                        foreach (var exam in exams)
+                        {
+                            var existingResult = await _context.ExamResults
+                                .FirstOrDefaultAsync(r => r.ExamId == exam.Id && r.StudentId == studentId);
+                            if (existingResult == null)
+                            {
+                                var marks = rng.Next(55, 100);
+                                _context.ExamResults.Add(new ExamResult
+                                {
+                                    ExamId = exam.Id,
+                                    StudentId = studentId,
+                                    Marks = marks,
+                                    Grade = marks switch { >= 90 => "A+", >= 80 => "A", >= 70 => "B", >= 60 => "C", >= 50 => "D", _ => "F" },
+                                    GradedById = graderId,
+                                    CreatedAt = DateTime.UtcNow
+                                });
+                                recordsCreated++;
+                            }
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                    await ComputeAndSaveProgress(studentId, course.Id);
+                }
+
+                return Ok(new { message = $"Demo data generated. {recordsCreated} records created.", studentId, studentName = student.FullName });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = ex.Message });
+            }
+        }
+
         private decimal GetCoursePassRate(long courseId)
         {
             var totalStudents = _context.StudentCourseProgress
@@ -661,6 +826,92 @@ namespace Learning_Management_System.Controllers
                 .Count();
 
             return (decimal)(passingStudents * 100 / totalStudents);
+        }
+
+        private async Task<StudentCourseProgress?> ComputeAndSaveProgress(string studentId, long courseId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null) return null;
+
+            var subjectIds = await _context.Subjects
+                .Where(s => s.CourseId == courseId && !s.IsDeleted)
+                .Select(s => s.Id).ToListAsync();
+
+            // Attendance
+            var sessionIds = await _context.AttendanceSessions
+                .Where(s => subjectIds.Contains(s.SubjectId))
+                .Select(s => s.Id).ToListAsync();
+            var totalSessions = sessionIds.Count;
+            var presentCount = totalSessions > 0
+                ? await _context.AttendanceRecords
+                    .CountAsync(r => r.StudentId == studentId && r.Status == "PRESENT" && sessionIds.Contains(r.SessionId))
+                : 0;
+            var attendance = totalSessions > 0 ? Math.Round((decimal)presentCount * 100 / totalSessions, 2) : 0;
+
+            // Assignments — join in SQL, select int (EF Core can translate int, not double cast)
+            var assignmentIds = await _context.Assignments
+                .Where(a => subjectIds.Contains(a.SubjectId) && !a.IsDeleted)
+                .Select(a => a.Id).ToListAsync();
+
+            var assignmentScoreInts = new List<int>();
+            if (assignmentIds.Any())
+            {
+                assignmentScoreInts = await (
+                    from sub in _context.Submissions
+                    join g in _context.AssignmentGrades on sub.Id equals g.SubmissionId
+                    where sub.StudentId == studentId && assignmentIds.Contains(sub.AssignmentId)
+                    select g.Score ?? 0
+                ).ToListAsync();
+            }
+            var assignmentAvg = assignmentScoreInts.Any()
+                ? Math.Round((decimal)assignmentScoreInts.Average(), 2) : 0;
+
+            // Exams — select int (no cast in SQL)
+            var examIds = await _context.Exams
+                .Where(e => subjectIds.Contains(e.SubjectId) && !e.IsDeleted)
+                .Select(e => e.Id).ToListAsync();
+            var examScoreInts = examIds.Any()
+                ? await _context.ExamResults
+                    .Where(r => r.StudentId == studentId && examIds.Contains(r.ExamId))
+                    .Select(r => r.Marks ?? 0).ToListAsync()
+                : new List<int>();
+            var examAvg = examScoreInts.Any()
+                ? Math.Round((decimal)examScoreInts.Average(), 2) : 0;
+
+            var overall = (attendance * 0.2m) + (assignmentAvg * 0.3m) + (examAvg * 0.5m);
+            var grade = overall switch { >= 90 => "A+", >= 80 => "A", >= 70 => "B", >= 60 => "C", >= 50 => "D", _ => "F" };
+
+            var existing = await _context.StudentCourseProgress
+                .Include(p => p.Course)
+                .FirstOrDefaultAsync(p => p.StudentId == studentId && p.CourseId == courseId);
+
+            if (existing != null)
+            {
+                existing.AttendancePercentage = attendance;
+                existing.AssignmentAvgScore = assignmentAvg;
+                existing.ExamAvgScore = examAvg;
+                existing.OverallGrade = grade;
+                existing.LastUpdated = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                existing.Course = course;
+                return existing;
+            }
+
+            var progress = new StudentCourseProgress
+            {
+                StudentId = studentId,
+                CourseId = courseId,
+                AttendancePercentage = attendance,
+                AssignmentAvgScore = assignmentAvg,
+                ExamAvgScore = examAvg,
+                OverallGrade = grade,
+                LastUpdated = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow
+            };
+            _context.StudentCourseProgress.Add(progress);
+            await _context.SaveChangesAsync();
+            progress.Course = course;
+            return progress;
         }
 
         private List<string> GetRiskFactors(StudentCourseProgress progress)

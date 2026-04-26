@@ -268,7 +268,22 @@ namespace Learning_Management_System.Controllers
             ViewBag.UserRole = GetRole();
             ViewBag.SubjectId = subjectId;
             ViewBag.SummaryJson = "null";
+            ViewBag.AllResultsJson = "[]";
 
+            // Load all results for this student
+            if (!string.IsNullOrEmpty(userId))
+            {
+                try
+                {
+                    var client = CreateClient();
+                    var allRes = await client.GetAsync($"{BaseUrl}/api/exam/student/{userId}/all-results");
+                    if (allRes.IsSuccessStatusCode)
+                        ViewBag.AllResultsJson = await allRes.Content.ReadAsStringAsync();
+                }
+                catch { ViewBag.AllResultsJson = "[]"; }
+            }
+
+            // Load subject-specific summary if requested
             if (!string.IsNullOrEmpty(userId) && subjectId.HasValue)
             {
                 try

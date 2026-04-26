@@ -305,5 +305,60 @@ namespace Learning_Management_System.Controllers
                 return StatusCode(500, "An error occurred while deleting the enrollment");
             }
         }
+
+        /// <summary>
+        /// Student self-enroll in a batch
+        /// </summary>
+        [HttpPost("self-enroll")]
+        [Authorize(Roles = "Student")]
+        public async Task<ActionResult<EnrollmentDto>> SelfEnroll([FromBody] SelfEnrollDto dto)
+        {
+            try
+            {
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser == null) return Unauthorized("User not found");
+
+                var batch = await _context.CourseBatches
+                    .Include(b => b.Course)
+                    .FirstOrDefaultAsync(b => b.Id == dto.BatchId && !b.IsDeleted);
+                if (batch == null) return NotFound("Batch not found");
+
+                var existing = await _context.Enrollments
+                    .FirstOrDefaultAsync(e => e.StudentId == currentUser.Id && e.BatchId == dto.BatchId && !e.IsDeleted);
+                if (existing != null) return BadRequest("You are already enrolled in this batch");
+
+                var enrollment = new Enrollment
+                {
+                    StudentId = currentUser.Id,
+                    BatchId = dto.BatchId,
+                    Status = "ACTIVE",
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Enrollments.Add(enrollment);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Student {StudentId} self-enrolled in batch {BatchId}", currentUser.Id, dto.BatchId);
+
+                return CreatedAtAction(nameof(GetEnrollment), new { id = enrollment.Id }, new EnrollmentDto
+                {
+                    Id = enrollment.Id,
+                    StudentId = enrollment.StudentId,
+                    StudentName = currentUser.FullName,
+                    StudentEmail = currentUser.Email ?? "",
+                    BatchId = enrollment.BatchId,
+                    BatchName = batch.BatchName,
+                    Status = enrollment.Status,
+                    EnrolledAt = enrollment.EnrolledAt,
+                    CreatedAt = enrollment.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during self-enrollment");
+                return StatusCode(500, "An error occurred while enrolling");
+            }
+        }
     }
 }

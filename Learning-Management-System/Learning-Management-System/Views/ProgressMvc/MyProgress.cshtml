@@ -1,6 +1,7 @@
 @{
     ViewData["Title"] = "My Progress";
     var progressJson = ViewBag.ProgressJson as string ?? "null";
+    var apiError = ViewBag.ApiError as string ?? "";
 }
 
 <div class="page-header">
@@ -10,20 +11,31 @@
     </div>
 </div>
 
+@if (!string.IsNullOrEmpty(apiError))
+{
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:14px 16px;background:var(--rose-soft);border:1px solid rgba(225,29,72,0.2);border-radius:10px;margin-bottom:20px;font-size:13px;color:var(--rose)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        <div><strong>Progress could not be loaded:</strong> @apiError</div>
+    </div>
+}
+
 <div id="progressContainer">
     <div style="text-align:center;padding:48px;color:var(--text-muted)">Loading your progress...</div>
 </div>
 
 @section Scripts {
 <script>
+(function() {
     const data = @Html.Raw(progressJson);
     const container = document.getElementById('progressContainer');
 
-    if (!data || (Array.isArray(data) && data.length === 0) || (data.message && !data.overall)) {
+    if (!data || (data.message && !data.overall)) {
+        const msg = (data && data.message) ? data.message : 'You are not enrolled in any courses yet.';
         container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             <div style="font-weight:600;color:var(--text-dim);margin-bottom:8px">No progress data yet</div>
-            <div style="font-size:13px;color:var(--text-muted)">Your progress will appear here once you are enrolled and have activity recorded.</div>
+            <div style="font-size:13px;color:var(--text-muted);margin-bottom:16px">${msg}</div>
+            <a href="/CourseMvc/Index" class="btn-lms-primary btn-lms-sm">Browse Courses</a>
         </div>`;
         return;
     }
@@ -67,42 +79,44 @@
         </div>
 
         <div style="font-weight:600;font-size:15px;margin-bottom:16px;color:var(--text)">Course-wise Performance</div>
-        <div class="content-grid-3">
-            ${courses.map(c => `
-                <div class="lms-card animate-up">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-                        <span style="font-weight:600;font-size:14px">${c.courseName || 'Course'}</span>
-                        <span class="lms-badge" style="${gradeStyle(c.overallGrade)}">${c.overallGrade || 'N/A'}</span>
-                    </div>
-                    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
-                        <div>
-                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
-                                <span>Attendance</span><span>${(c.attendancePercentage||0).toFixed(1)}%</span>
+        ${courses.length === 0
+            ? `<div class="lms-card" style="text-align:center;padding:32px;color:var(--text-muted)">No course data available.</div>`
+            : `<div class="content-grid-3">
+                ${courses.map(c => `
+                    <div class="lms-card animate-up">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                            <span style="font-weight:600;font-size:14px">${c.courseName || 'Course'}</span>
+                            <span class="lms-badge" style="${gradeStyle(c.overallGrade)}">${c.overallGrade || 'N/A'}</span>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">
+                            <div>
+                                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+                                    <span>Attendance</span><span>${(c.attendancePercentage||0).toFixed(1)}%</span>
+                                </div>
+                                <div class="lms-progress">
+                                    <div class="lms-progress-fill" style="width:${Math.min(c.attendancePercentage||0,100)}%;background:${(c.attendancePercentage||0)>=75?'var(--green)':'var(--rose)'}"></div>
+                                </div>
                             </div>
-                            <div class="lms-progress">
-                                <div class="lms-progress-fill" style="width:${Math.min(c.attendancePercentage||0,100)}%;background:${(c.attendancePercentage||0)>=75?'var(--green)':'var(--rose)'}"></div>
+                            <div>
+                                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+                                    <span>Assignments</span><span>${(c.assignmentAvgScore||0).toFixed(1)}</span>
+                                </div>
+                                <div class="lms-progress">
+                                    <div class="lms-progress-fill" style="width:${Math.min(c.assignmentAvgScore||0,100)}%;background:var(--sky)"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
+                                    <span>Exams</span><span>${(c.examAvgScore||0).toFixed(1)}</span>
+                                </div>
+                                <div class="lms-progress">
+                                    <div class="lms-progress-fill" style="width:${Math.min(c.examAvgScore||0,100)}%;background:${(c.examAvgScore||0)>=50?'var(--green)':'var(--rose)'}"></div>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
-                                <span>Assignments</span><span>${(c.assignmentAvgScore||0).toFixed(1)}</span>
-                            </div>
-                            <div class="lms-progress">
-                                <div class="lms-progress-fill" style="width:${Math.min(c.assignmentAvgScore||0,100)}%;background:var(--sky)"></div>
-                            </div>
-                        </div>
-                        <div>
-                            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:4px">
-                                <span>Exams</span><span>${(c.examAvgScore||0).toFixed(1)}</span>
-                            </div>
-                            <div class="lms-progress">
-                                <div class="lms-progress-fill" style="width:${Math.min(c.examAvgScore||0,100)}%;background:${(c.examAvgScore||0)>=50?'var(--green)':'var(--rose)'}"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="font-size:12.5px;color:var(--text-muted)">Status: <strong style="color:var(--text)">${c.status || 'N/A'}</strong></div>
-                </div>
-            `).join('')}
-        </div>`;
+                        <div style="font-size:12.5px;color:var(--text-muted)">Status: <strong style="color:var(--text)">${c.status || 'N/A'}</strong></div>
+                    </div>`).join('')}
+            </div>`}`;
+})();
 </script>
 }

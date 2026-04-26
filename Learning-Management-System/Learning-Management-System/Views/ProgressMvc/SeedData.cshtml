@@ -1,0 +1,78 @@
+@{
+    ViewData["Title"] = "Seed Demo Data";
+    var studentsJson = ViewBag.StudentsJson as string ?? "[]";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">Generate Demo Data</div>
+        <div class="page-sub">Populate sample academic records for a student to verify progress and results are working</div>
+    </div>
+</div>
+
+<div class="lms-alert" style="display:flex;align-items:flex-start;gap:10px;padding:14px 16px;background:var(--amber-soft);border:1px solid rgba(217,119,6,0.2);border-radius:10px;margin-bottom:20px">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <div>
+        <strong style="font-size:13px">What this does:</strong>
+        <div style="font-size:12.5px;color:var(--text-muted);margin-top:2px">
+            Enrolls the student in all courses, creates attendance records (80% rate), assignment submissions with grades (60–100), and exam results (55–100). Existing records are never overwritten.
+        </div>
+    </div>
+</div>
+
+<div class="lms-card" style="margin-bottom:20px">
+    <div style="font-weight:600;font-size:15px;margin-bottom:16px">Select a Student</div>
+    <div id="studentGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px"></div>
+    <div style="color:var(--text-faint);font-size:13px;text-align:center;padding:8px" id="noStudentsMsg" style="display:none">No students found.</div>
+</div>
+
+<div class="lms-card" id="selectedPanel" style="display:none">
+    <div style="font-weight:600;font-size:14px;margin-bottom:14px">Generate Data For:</div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+        <div class="lms-avatar av-sky" style="width:42px;height:42px;font-size:17px;flex-shrink:0" id="selectedAvatar">?</div>
+        <div>
+            <div style="font-weight:600;font-size:14px" id="selectedName">—</div>
+            <div style="font-size:12.5px;color:var(--text-muted)" id="selectedEmail">—</div>
+        </div>
+    </div>
+    <form method="post" asp-action="SeedDemoData">
+        <input type="hidden" name="studentId" id="studentIdInput" value="">
+        <button type="submit" class="btn-lms-primary">Generate Demo Data</button>
+    </form>
+</div>
+
+@section Scripts {
+<script>
+    const students = @Html.Raw(studentsJson);
+    const grid = document.getElementById('studentGrid');
+
+    if (!students || students.length === 0) {
+        document.getElementById('noStudentsMsg').style.display = 'block';
+    } else {
+        students.forEach(s => {
+            const letter = (s.fullName || s.email || '?')[0].toUpperCase();
+            const div = document.createElement('div');
+            div.className = 'lms-card animate-up';
+            div.style.cssText = 'cursor:pointer;padding:14px 16px;display:flex;align-items:center;gap:12px;transition:box-shadow 0.15s';
+            div.innerHTML = `
+                <div class="lms-avatar av-sky" style="width:36px;height:36px;font-size:14px;flex-shrink:0">${letter}</div>
+                <div style="min-width:0">
+                    <div style="font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.fullName || 'Unknown'}</div>
+                    <div style="font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.email || ''}</div>
+                </div>`;
+            div.addEventListener('click', () => {
+                document.getElementById('selectedPanel').style.display = 'block';
+                document.getElementById('selectedName').textContent = s.fullName || 'Unknown';
+                document.getElementById('selectedEmail').textContent = s.email || '';
+                document.getElementById('selectedAvatar').textContent = letter;
+                document.getElementById('studentIdInput').value = s.id;
+                document.getElementById('selectedPanel').scrollIntoView({ behavior: 'smooth' });
+                // Highlight selected card
+                grid.querySelectorAll('.lms-card').forEach(c => c.style.boxShadow = '');
+                div.style.boxShadow = '0 0 0 2px var(--navy)';
+            });
+            grid.appendChild(div);
+        });
+    }
+</script>
+}

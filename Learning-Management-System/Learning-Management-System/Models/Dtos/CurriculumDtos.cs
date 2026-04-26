@@ -159,6 +159,12 @@ public class UpdateEnrollmentDto
     public string? Status { get; set; } // ACTIVE, DROPPED, COMPLETED
 }
 
+public class SelfEnrollDto
+{
+    [Required]
+    public long BatchId { get; set; }
+}
+
 public class EnrollmentDto
 {
     public long Id { get; set; }

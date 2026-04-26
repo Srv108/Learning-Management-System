@@ -168,5 +168,32 @@ namespace Learning_Management_System.Controllers
             TempData["Success"] = "Enrollment removed.";
             return RedirectToAction("Index", new { batchId });
         }
+
+        // Student: self-enroll in a batch
+        [HttpPost]
+        public async Task<IActionResult> SelfEnroll(long batchId)
+        {
+            if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
+
+            try
+            {
+                var client = CreateClient();
+                var payload = new { batchId };
+                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                var response = await client.PostAsync($"{BaseUrl}/api/enrollment/self-enroll", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    TempData["Success"] = "You have successfully enrolled!";
+                    return RedirectToAction("MyEnrollments");
+                }
+
+                var err = await response.Content.ReadAsStringAsync();
+                TempData["Error"] = $"Enrollment failed: {err}";
+            }
+            catch (Exception ex) { TempData["Error"] = ex.Message; }
+
+            return RedirectToAction("MyEnrollments");
+        }
     }
 }

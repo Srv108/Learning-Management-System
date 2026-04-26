@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -7,11 +8,14 @@ namespace Learning_Management_System.Controllers
     public class ProgressMvcController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly UserManager<Learning_Management_System.Models.AppUser> _userManager;
         private const string BaseUrl = "http://localhost:5171";
 
-        public ProgressMvcController(IHttpClientFactory httpClientFactory)
+        public ProgressMvcController(IHttpClientFactory httpClientFactory,
+            UserManager<Learning_Management_System.Models.AppUser> userManager)
         {
             _httpClientFactory = httpClientFactory;
+            _userManager = userManager;
         }
 
         private string? GetToken() => HttpContext.Session.GetString("JwtToken");
@@ -36,6 +40,7 @@ namespace Learning_Management_System.Controllers
             var userId = GetUserId();
             ViewBag.UserRole = GetRole();
             ViewBag.ProgressJson = "null";
+            ViewBag.ApiError = "";
 
             if (!string.IsNullOrEmpty(userId))
             {
@@ -43,10 +48,17 @@ namespace Learning_Management_System.Controllers
                 {
                     var client = CreateClient();
                     var res = await client.GetAsync($"{BaseUrl}/api/studentprogress/student/{userId}");
+                    var body = await res.Content.ReadAsStringAsync();
                     if (res.IsSuccessStatusCode)
-                        ViewBag.ProgressJson = await res.Content.ReadAsStringAsync();
+                        ViewBag.ProgressJson = body;
+                    else
+                        ViewBag.ApiError = $"API {(int)res.StatusCode}: {body}";
                 }
-                catch (Exception ex) { ViewBag.Error = ex.Message; }
+                catch (Exception ex) { ViewBag.ApiError = ex.Message; }
+            }
+            else
+            {
+                ViewBag.ApiError = "User session not found. Please log out and log in again.";
             }
 
             return View();
@@ -122,6 +134,47 @@ namespace Learning_Management_System.Controllers
             catch { ViewBag.AnalyticsJson = "null"; }
 
             return View();
+        }
+
+        // Admin/Coordinator: seed demo data for a student
+        [HttpGet]
+        public async Task<IActionResult> SeedData()
+        {
+            if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
+            var role = GetRole();
+            if (role != "Admin" && role != "CourseCoordinator")
+            { TempData["Error"] = "Access denied."; return RedirectToAction("Index", "Home"); }
+
+            ViewBag.UserRole = role;
+
+            // Load students directly from UserManager
+            var students = await _userManager.GetUsersInRoleAsync("Student");
+            var studentList = students.Select(s => new { id = s.Id, fullName = s.FullName, email = s.Email }).ToList();
+            ViewBag.StudentsJson = System.Text.Json.JsonSerializer.Serialize(studentList);
+
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> SeedDemoData(string studentId)
+        {
+            if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
+            var role = GetRole();
+            if (role != "Admin" && role != "CourseCoordinator")
+            { TempData["Error"] = "Access denied."; return RedirectToAction("Index", "Home"); }
+
+            try
+            {
+                var client = CreateClient();
+                var res = await client.PostAsync($"{BaseUrl}/api/studentprogress/seed-demo/{studentId}", null);
+                if (res.IsSuccessStatusCode)
+                    TempData["Success"] = "Demo data generated! The student can now view their progress and exam results.";
+                else
+                    TempData["Error"] = $"Failed: {await res.Content.ReadAsStringAsync()}";
+            }
+            catch (Exception ex) { TempData["Error"] = ex.Message; }
+
+            return RedirectToAction("SeedData");
         }
 
         // Teacher/Coordinator/Admin: at-risk students
