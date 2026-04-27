@@ -1,4 +1,6 @@
+using Learning_Management_System.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,11 +10,13 @@ namespace Learning_Management_System.Controllers
     public class AttendanceMvcController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ApplicationDbContext _context;
         private const string BaseUrl = "http://localhost:5171";
 
-        public AttendanceMvcController(IHttpClientFactory httpClientFactory)
+        public AttendanceMvcController(IHttpClientFactory httpClientFactory, ApplicationDbContext context)
         {
             _httpClientFactory = httpClientFactory;
+            _context = context;
         }
 
         private string? GetToken() => HttpContext.Session.GetString("JwtToken");
@@ -135,8 +139,43 @@ namespace Learning_Management_System.Controllers
 
                 ViewBag.SessionJson = sessionTask.Result.IsSuccessStatusCode
                     ? await sessionTask.Result.Content.ReadAsStringAsync() : "{}";
-                ViewBag.RecordsJson = recordsTask.Result.IsSuccessStatusCode
+                var recordsJson = recordsTask.Result.IsSuccessStatusCode
                     ? await recordsTask.Result.Content.ReadAsStringAsync() : "[]";
+                ViewBag.RecordsJson = recordsJson;
+
+                // If no records yet, pre-load all enrolled students for this session's course
+                if (recordsJson == "[]" || recordsJson == "null")
+                {
+                    var session = await _context.AttendanceSessions
+                        .Include(s => s.Subject)
+                        .FirstOrDefaultAsync(s => s.Id == sessionId && !s.IsDeleted);
+
+                    if (session != null)
+                    {
+                        var courseId = session.Subject?.CourseId;
+                        if (courseId.HasValue)
+                        {
+                            var enrolledStudents = await _context.Enrollments
+                                .Include(e => e.Student)
+                                .Include(e => e.Batch)
+                                .Where(e => e.Batch!.CourseId == courseId.Value
+                                         && e.Status == "ACTIVE"
+                                         && !e.IsDeleted)
+                                .Select(e => new
+                                {
+                                    studentId = e.StudentId,
+                                    studentName = e.Student != null ? e.Student.FullName : "",
+                                    studentEmail = e.Student != null ? (e.Student.Email ?? "") : "",
+                                    status = "PRESENT"
+                                })
+                                .Distinct()
+                                .ToListAsync();
+
+                            ViewBag.RecordsJson = JsonSerializer.Serialize(enrolledStudents,
+                                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+                        }
+                    }
+                }
             }
             catch (Exception ex) { ViewBag.Error = ex.Message; }
 
@@ -150,16 +189,57 @@ namespace Learning_Management_System.Controllers
 
             try
             {
-                var records = JsonSerializer.Deserialize<List<object>>(recordsJson);
-                var client = CreateClient();
-                var payload = new { sessionId, records };
-                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                var res = await client.PostAsync($"{BaseUrl}/api/attendance/bulk-mark", content);
+                var session = await _context.AttendanceSessions
+                    .FirstOrDefaultAsync(s => s.Id == sessionId && !s.IsDeleted);
+                if (session == null)
+                {
+                    TempData["Error"] = "Session not found.";
+                    return RedirectToAction("MarkAttendance", new { sessionId });
+                }
 
-                TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
-                    res.IsSuccessStatusCode ? "Attendance marked successfully!" : "Failed to mark attendance.";
+                var records = JsonSerializer.Deserialize<List<JsonElement>>(recordsJson);
+                if (records == null || records.Count == 0)
+                {
+                    TempData["Error"] = "No records to save.";
+                    return RedirectToAction("MarkAttendance", new { sessionId });
+                }
+
+                foreach (var rec in records)
+                {
+                    var studentId = rec.TryGetProperty("studentId", out var sidProp) ? sidProp.GetString() : null;
+                    var status    = rec.TryGetProperty("status",    out var stProp)  ? stProp.GetString()  : "PRESENT";
+
+                    if (string.IsNullOrEmpty(studentId)) continue;
+
+                    var existing = await _context.AttendanceRecords
+                        .FirstOrDefaultAsync(r => r.SessionId == sessionId
+                                               && r.StudentId == studentId
+                                               && !r.IsDeleted);
+                    if (existing != null)
+                    {
+                        existing.Status    = status ?? "PRESENT";
+                        existing.UpdatedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        _context.AttendanceRecords.Add(new Learning_Management_System.Models.AttendanceRecord
+                        {
+                            SessionId = sessionId,
+                            StudentId = studentId,
+                            Status    = status ?? "PRESENT",
+                            IsDeleted = false,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Attendance saved successfully!";
             }
-            catch (Exception ex) { TempData["Error"] = ex.Message; }
+            catch (Exception ex)
+            {
+                TempData["Error"] = $"Failed to save attendance: {ex.Message}";
+            }
 
             return RedirectToAction("MarkAttendance", new { sessionId });
         }

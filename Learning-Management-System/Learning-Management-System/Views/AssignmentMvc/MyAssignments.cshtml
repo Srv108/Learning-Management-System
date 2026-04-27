@@ -12,6 +12,15 @@
     </div>
 </div>
 
+@if (TempData["Success"] != null)
+{
+    <div class="lms-alert success" style="margin-bottom:16px">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="lms-alert danger" style="margin-bottom:16px">@TempData["Error"]</div>
+}
+
 <div class="lms-card" style="margin-bottom:20px">
     <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
         <div class="lms-form-group" style="margin-bottom:0">
@@ -37,6 +46,7 @@
         </div>
         <form method="post" asp-action="Submit" style="display:flex;flex-direction:column;gap:14px">
             <input type="hidden" name="assignmentId" id="submitAssignmentId" />
+            <input type="hidden" name="subjectId" value="@subjectId" />
             <div id="submitAssignmentTitle" style="font-weight:600;color:var(--text)"></div>
             <div class="lms-form-group">
                 <label class="lms-label">Submission URL (optional)</label>
@@ -104,18 +114,48 @@
             assignments.map(a => {
                 const due = new Date(a.dueDate);
                 const overdue = due < now;
+
+                // Top status badge
+                let topBadge;
+                if (a.submitted) {
+                    const badgeStyle = a.submissionStatus === 'LATE'
+                        ? 'background:var(--amber-soft);color:var(--amber)'
+                        : 'background:var(--green-soft);color:var(--green)';
+                    const badgeText = a.submissionStatus === 'LATE' ? 'Submitted (Late)' : 'Submitted';
+                    topBadge = `<span class="lms-badge" style="${badgeStyle}">${badgeText}</span>`;
+                } else if (overdue) {
+                    topBadge = `<span class="lms-badge" style="background:var(--rose-soft);color:var(--rose)">Overdue</span>`;
+                } else {
+                    topBadge = `<span class="lms-badge" style="background:var(--sky-soft);color:var(--sky)">Active</span>`;
+                }
+
+                // Action button
+                let actionBtn;
+                if (a.submitted) {
+                    const submittedDate = a.submittedAt ? new Date(a.submittedAt).toLocaleDateString() : '';
+                    actionBtn = `<div style="display:flex;flex-direction:column;gap:6px">
+                        <div style="text-align:center;font-size:12.5px;color:var(--text-muted)">Submitted ${submittedDate}</div>
+                        <button class="btn-lms-ghost btn-lms-sm" style="width:100%"
+                                onclick="openSubmitModal(${a.id}, '${(a.title||'').replace(/'/g,"\\'")}')">
+                            Re-submit
+                        </button>
+                    </div>`;
+                } else {
+                    actionBtn = `<button class="btn-lms-primary btn-lms-sm" style="width:100%"
+                            onclick="openSubmitModal(${a.id}, '${(a.title||'').replace(/'/g,"\\'")}')">
+                        Submit Assignment
+                    </button>`;
+                }
+
                 return `<div class="lms-card animate-up">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-                        <span class="lms-badge" style="background:${overdue ? 'var(--rose-soft)' : 'var(--sky-soft)'};color:${overdue ? 'var(--rose)' : 'var(--sky)'}">${overdue ? 'Overdue' : 'Active'}</span>
+                        ${topBadge}
                         <span style="font-size:12px;color:var(--text-muted)">Max: ${a.maxScore} pts</span>
                     </div>
                     <div style="font-weight:700;font-size:15px;margin-bottom:6px">${a.title}</div>
                     <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">${a.description || ''}</div>
-                    <div style="font-size:12.5px;margin-bottom:16px"><span style="color:var(--text-muted)">Due:</span> <strong style="color:${overdue ? 'var(--rose)' : 'var(--text)'}">${due.toLocaleDateString()} ${due.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</strong></div>
-                    <button class="btn-lms-primary btn-lms-sm" style="width:100%"
-                            onclick="openSubmitModal(${a.id}, '${(a.title||'').replace(/'/g,"\\'")}')">
-                        Submit Assignment
-                    </button>
+                    <div style="font-size:12.5px;margin-bottom:16px"><span style="color:var(--text-muted)">Due:</span> <strong style="color:${overdue && !a.submitted ? 'var(--rose)' : 'var(--text)'}">${due.toLocaleDateString()} ${due.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</strong></div>
+                    ${actionBtn}
                 </div>`;
             }).join('') + `</div>`;
     }

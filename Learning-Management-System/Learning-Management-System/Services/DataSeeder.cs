@@ -20,19 +20,27 @@ namespace Learning_Management_System.Services
 
         public async Task SeedDataAsync()
         {
-            // Check if data already exists
-            if (await _context.Courses.AnyAsync())
-            {
-                return; // Data already seeded
-            }
+            // Run each section only if its data doesn't exist yet (allows partial re-seeding)
+            if (!await _context.Roles.AnyAsync())
+                await SeedUsersAndRoles();
 
-            await SeedUsersAndRoles();
-            await SeedCoursesAndSubjects();
-            await SeedCourseBatchesAndEnrollments();
-            await SeedAttendance();
-            await SeedAssignments();
-            await SeedExams();
-            await SeedProgress();
+            if (!await _context.Courses.AnyAsync())
+                await SeedCoursesAndSubjects();
+
+            if (!await _context.CourseBatches.AnyAsync())
+                await SeedCourseBatchesAndEnrollments();
+
+            if (!await _context.AttendanceSessions.AnyAsync())
+                await SeedAttendance();
+
+            if (!await _context.Assignments.AnyAsync())
+                await SeedAssignments();
+
+            if (!await _context.Exams.AnyAsync())
+                await SeedExams();
+
+            if (!await _context.StudentCourseProgress.AnyAsync())
+                await SeedProgress();
 
             await _context.SaveChangesAsync();
         }

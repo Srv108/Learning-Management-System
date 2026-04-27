@@ -67,12 +67,14 @@ namespace Learning_Management_System.Data
 
             builder.Entity<AttendanceRecord>()
                 .HasOne(ar => ar.Session)
-                .WithMany()
+                .WithMany(s => s.Records)
+                .HasForeignKey(ar => ar.SessionId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<ExamResult>()
                 .HasOne(er => er.Exam)
-                .WithMany()
+                .WithMany(e => e.Results)
+                .HasForeignKey(er => er.ExamId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             builder.Entity<AssignmentGrade>()

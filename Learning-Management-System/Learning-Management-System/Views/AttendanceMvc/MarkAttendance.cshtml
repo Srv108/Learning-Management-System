@@ -46,8 +46,8 @@
                 <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Subject</div><div style="font-weight:600">${session.subjectName || '-'}</div></div>
                 <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Course</div><div style="font-weight:600">${session.courseName || '-'}</div></div>
                 <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Date</div><div style="font-weight:600">${session.sessionDate ? new Date(session.sessionDate).toLocaleDateString() : '-'}</div></div>
-                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Present</div><div style="font-weight:600;color:var(--green)">${session.presentCount || 0}</div></div>
-                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Absent</div><div style="font-weight:600;color:var(--rose)">${session.absentCount || 0}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Present</div><div id="livePresent" style="font-weight:600;color:var(--green)">${session.presentCount || 0}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Absent</div><div id="liveAbsent" style="font-weight:600;color:var(--rose)">${session.absentCount || 0}</div></div>
             </div>
         </div>`;
 
@@ -88,6 +88,16 @@
             `</tbody></table></div>`;
     }
 
+    function updateHeaderCounts() {
+        const values = Object.values(students);
+        const present = values.filter(s => s === 'PRESENT').length;
+        const absent  = values.filter(s => s === 'ABSENT').length;
+        const elPresent = document.getElementById('livePresent');
+        const elAbsent  = document.getElementById('liveAbsent');
+        if (elPresent) elPresent.textContent = present;
+        if (elAbsent)  elAbsent.textContent  = absent;
+    }
+
     function setStatus(studentId, status, btn) {
         students[studentId] = status;
         const row = document.getElementById('row-' + studentId);
@@ -96,6 +106,7 @@
         });
         if (status === 'PRESENT') btn.className = btn.className.replace('att-outline','att-present');
         else btn.className = btn.className.replace('att-outline-danger','att-absent');
+        updateHeaderCounts();
     }
 
     function markAll(status) {
@@ -109,6 +120,7 @@
                 ? buttons[1].className.replace('att-outline-danger','att-absent')
                 : buttons[1].className.replace('att-absent','att-outline-danger');
         });
+        updateHeaderCounts();
     }
 
     async function saveAttendance() {

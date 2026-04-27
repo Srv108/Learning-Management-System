@@ -17,6 +17,15 @@
     </a>
 </div>
 
+@if (TempData["Success"] != null)
+{
+    <div class="lms-alert success" style="margin-bottom:16px">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="lms-alert danger" style="margin-bottom:16px">@TempData["Error"]</div>
+}
+
 <div id="assignmentHeader" style="margin-bottom:20px"></div>
 
 <div class="lms-card" style="padding:0">
@@ -29,6 +38,7 @@
                     <th>Submitted At</th>
                     <th>Status</th>
                     <th>File</th>
+                    <th>Grade</th>
                     <th>Action</th>
                 </tr>
             </thead>
@@ -41,7 +51,7 @@
 <div id="gradeModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center">
     <div class="lms-card" style="width:480px;max-width:90vw">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-            <span style="font-weight:600;font-size:16px">Grade Submission</span>
+            <span style="font-weight:600;font-size:16px" id="gradeModalTitle">Grade Submission</span>
             <button onclick="closeGradeModal()" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:20px;line-height:1">&times;</button>
         </div>
         <form method="post" asp-action="Grade" style="display:flex;flex-direction:column;gap:14px">
@@ -82,6 +92,7 @@
                 <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Max Score</div><div style="font-weight:600">${assignment.maxScore}</div></div>
                 <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Due Date</div><div style="font-weight:600">${new Date(assignment.dueDate).toLocaleDateString()}</div></div>
                 <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Submissions</div><div style="font-weight:600">${submissions.length}</div></div>
+                <div><div style="font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Graded</div><div style="font-weight:600">${submissions.filter(s => s.graded).length}</div></div>
             </div>
         </div>` : '';
 
@@ -93,10 +104,23 @@
 
     const tbody = document.getElementById('submissionsBody');
     if (!submissions || submissions.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">No submissions yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No submissions yet</td></tr>';
     } else {
-        tbody.innerHTML = submissions.map(s => `
-            <tr>
+        tbody.innerHTML = submissions.map(s => {
+            let gradeCell;
+            if (s.graded) {
+                const pct = assignment.maxScore > 0 ? Math.round((s.gradeScore / assignment.maxScore) * 100) : 0;
+                const color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--amber)' : 'var(--rose)';
+                gradeCell = `<div>
+                    <span style="font-weight:700;color:${color}">${s.gradeScore}</span>
+                    <span style="font-size:12px;color:var(--text-muted)"> / ${assignment.maxScore}</span>
+                    ${s.gradedByName ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:2px">${s.gradedByName}</div>` : ''}
+                </div>`;
+            } else {
+                gradeCell = `<span class="lms-badge" style="background:var(--sky-soft);color:var(--sky)">Not graded</span>`;
+            }
+
+            return `<tr>
                 <td>
                     <div style="font-weight:600">${s.studentName || '-'}</div>
                     <div style="font-size:12.5px;color:var(--text-muted)">${s.studentEmail || ''}</div>
@@ -104,21 +128,25 @@
                 <td style="font-size:12.5px;color:var(--text-muted)">${s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '-'}</td>
                 <td><span class="lms-badge" style="${statusStyle(s.status)}">${s.status}</span></td>
                 <td>${s.fileUrl ? `<a href="${s.fileUrl}" target="_blank" class="btn-lms-ghost btn-lms-sm">View File</a>` : '<span style="color:var(--text-faint);font-size:12.5px">No file</span>'}</td>
+                <td>${gradeCell}</td>
                 <td>
-                    <button class="btn-lms-primary btn-lms-sm"
-                            onclick="openGradeModal(${s.id}, '${(s.studentName||'').replace(/'/g,"\\'")}')">
-                        Grade
+                    <button class="btn-lms-${s.graded ? 'ghost' : 'primary'} btn-lms-sm"
+                            onclick="openGradeModal(${s.id}, '${(s.studentName||'').replace(/'/g,"\\'")}', ${s.gradeScore != null ? s.gradeScore : 'null'}, '${(s.gradeFeedback||'').replace(/'/g,"\\'")}')">
+                        ${s.graded ? 'Update Grade' : 'Grade'}
                     </button>
                 </td>
-            </tr>
-        `).join('');
+            </tr>`;
+        }).join('');
     }
 
-    function openGradeModal(submissionId, studentName) {
+    function openGradeModal(submissionId, studentName, existingScore, existingFeedback) {
         document.getElementById('gradeSubmissionId').value = submissionId;
         document.getElementById('gradeStudentName').value = studentName;
         document.getElementById('gradeScore').max = assignment.maxScore || 100;
+        document.getElementById('gradeScore').value = existingScore !== undefined && existingScore !== null && existingScore !== '' ? existingScore : '';
+        document.getElementById('gradeFeedback').value = existingFeedback || '';
         document.getElementById('maxScoreHint').textContent = `Max score: ${assignment.maxScore || 100}`;
+        document.getElementById('gradeModalTitle').textContent = existingScore !== undefined && existingScore !== null && existingScore !== '' ? 'Update Grade' : 'Grade Submission';
         document.getElementById('gradeModal').style.display = 'flex';
     }
 

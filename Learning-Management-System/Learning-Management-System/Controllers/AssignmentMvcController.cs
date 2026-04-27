@@ -1,4 +1,6 @@
+using Learning_Management_System.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -8,11 +10,18 @@ namespace Learning_Management_System.Controllers
     public class AssignmentMvcController : Controller
     {
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ApplicationDbContext _context;
         private const string BaseUrl = "http://localhost:5171";
 
-        public AssignmentMvcController(IHttpClientFactory httpClientFactory)
+        private static readonly JsonSerializerOptions _jsonOptions = new()
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        };
+
+        public AssignmentMvcController(IHttpClientFactory httpClientFactory, ApplicationDbContext context)
         {
             _httpClientFactory = httpClientFactory;
+            _context = context;
         }
 
         private string? GetToken() => HttpContext.Session.GetString("JwtToken");
@@ -27,6 +36,17 @@ namespace Learning_Management_System.Controllers
             if (!string.IsNullOrEmpty(token))
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
             return client;
+        }
+
+        private async Task LoadCoursesAsync()
+        {
+            try
+            {
+                var client = CreateClient();
+                var c = await client.GetAsync($"{BaseUrl}/api/course?pageSize=100");
+                ViewBag.CoursesJson = c.IsSuccessStatusCode ? await c.Content.ReadAsStringAsync() : "[]";
+            }
+            catch { ViewBag.CoursesJson = "[]"; }
         }
 
         // Teacher/Admin: list assignments by subject
@@ -53,14 +73,7 @@ namespace Learning_Management_System.Controllers
                 catch (Exception ex) { ViewBag.Error = ex.Message; }
             }
 
-            try
-            {
-                var client2 = CreateClient();
-                var c = await client2.GetAsync($"{BaseUrl}/api/course?pageSize=100");
-                ViewBag.CoursesJson = c.IsSuccessStatusCode ? await c.Content.ReadAsStringAsync() : "[]";
-            }
-            catch { ViewBag.CoursesJson = "[]"; }
-
+            await LoadCoursesAsync();
             return View();
         }
 
@@ -73,14 +86,7 @@ namespace Learning_Management_System.Controllers
                 return RedirectToAction("Index", "Home");
 
             ViewBag.UserRole = role;
-            try
-            {
-                var client = CreateClient();
-                var c = await client.GetAsync($"{BaseUrl}/api/course?pageSize=100");
-                ViewBag.CoursesJson = c.IsSuccessStatusCode ? await c.Content.ReadAsStringAsync() : "[]";
-            }
-            catch { ViewBag.CoursesJson = "[]"; }
-
+            await LoadCoursesAsync();
             return View();
         }
 
@@ -101,15 +107,14 @@ namespace Learning_Management_System.Controllers
                     TempData["Success"] = "Assignment created!";
                     return RedirectToAction("Index", new { subjectId });
                 }
-                var err = await res.Content.ReadAsStringAsync();
-                TempData["Error"] = $"Failed: {err}";
+                TempData["Error"] = $"Failed: {await res.Content.ReadAsStringAsync()}";
             }
             catch (Exception ex) { TempData["Error"] = ex.Message; }
 
             return RedirectToAction("Create");
         }
 
-        // Teacher: view submissions for an assignment
+        // Teacher: view submissions for an assignment (includes grade info)
         public async Task<IActionResult> Submissions(long? assignmentId = null)
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
@@ -122,50 +127,108 @@ namespace Learning_Management_System.Controllers
             ViewBag.SubmissionsJson = "[]";
             ViewBag.AssignmentJson = "{}";
 
-            if (assignmentId.HasValue)
-            {
-                try
-                {
-                    var client = CreateClient();
-                    var assignTask = client.GetAsync($"{BaseUrl}/api/assignment/{assignmentId}");
-                    var subsTask = client.GetAsync($"{BaseUrl}/api/assignment/{assignmentId}/submissions");
-                    await Task.WhenAll(assignTask, subsTask);
+            if (!assignmentId.HasValue) return View();
 
-                    ViewBag.AssignmentJson = assignTask.Result.IsSuccessStatusCode
-                        ? await assignTask.Result.Content.ReadAsStringAsync() : "{}";
-                    ViewBag.SubmissionsJson = subsTask.Result.IsSuccessStatusCode
-                        ? await subsTask.Result.Content.ReadAsStringAsync() : "[]";
+            try
+            {
+                var assignment = await _context.Assignments
+                    .Include(a => a.Subject)
+                    .FirstOrDefaultAsync(a => a.Id == assignmentId.Value && !a.IsDeleted);
+
+                if (assignment != null)
+                {
+                    ViewBag.AssignmentJson = JsonSerializer.Serialize(new
+                    {
+                        id = assignment.Id,
+                        title = assignment.Title,
+                        description = assignment.Description,
+                        maxScore = assignment.MaxScore,
+                        dueDate = assignment.DueDate,
+                        subjectName = assignment.Subject?.Name
+                    }, _jsonOptions);
                 }
-                catch (Exception ex) { ViewBag.Error = ex.Message; }
+
+                var submissions = await _context.Submissions
+                    .Include(s => s.Student)
+                    .Include(s => s.Grade).ThenInclude(g => g!.GradedBy)
+                    .Where(s => s.AssignmentId == assignmentId.Value && !s.IsDeleted)
+                    .OrderBy(s => s.SubmittedAt)
+                    .ToListAsync();
+
+                var data = submissions.Select(s => new
+                {
+                    id = s.Id,
+                    studentId = s.StudentId,
+                    studentName = s.Student?.FullName ?? s.Student?.UserName,
+                    studentEmail = s.Student?.Email,
+                    fileUrl = s.FileUrl,
+                    status = s.Status,
+                    submittedAt = s.SubmittedAt,
+                    graded = s.Grade != null && !s.Grade.IsDeleted,
+                    gradeScore = s.Grade?.Score,
+                    gradeFeedback = s.Grade?.Feedback,
+                    gradedByName = s.Grade?.GradedBy?.FullName ?? s.Grade?.GradedBy?.UserName,
+                    gradedAt = s.Grade?.GradedAt
+                });
+
+                ViewBag.SubmissionsJson = JsonSerializer.Serialize(data, _jsonOptions);
             }
+            catch (Exception ex) { ViewBag.Error = ex.Message; }
 
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Grade(long submissionId, decimal score, string feedback, long? assignmentId)
+        public async Task<IActionResult> Grade(long submissionId, int score, string? feedback, long? assignmentId)
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
 
+            var graderId = GetUserId();
             try
             {
-                var client = CreateClient();
-                var payload = new { submissionId, score, feedback };
-                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                var res = await client.PostAsync($"{BaseUrl}/api/assignment/grade", content);
-                TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
-                    res.IsSuccessStatusCode ? "Grade saved!" : "Failed to save grade.";
+                var submission = await _context.Submissions
+                    .FirstOrDefaultAsync(s => s.Id == submissionId && !s.IsDeleted);
+                if (submission == null) { TempData["Error"] = "Submission not found."; return RedirectToAction("Submissions", new { assignmentId }); }
+
+                var existing = await _context.AssignmentGrades
+                    .FirstOrDefaultAsync(g => g.SubmissionId == submissionId && !g.IsDeleted);
+
+                if (existing != null)
+                {
+                    existing.Score = score;
+                    existing.Feedback = feedback;
+                    existing.GradedById = graderId;
+                    existing.GradedAt = DateTime.UtcNow;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    TempData["Success"] = "Grade updated successfully!";
+                }
+                else
+                {
+                    _context.AssignmentGrades.Add(new Learning_Management_System.Models.AssignmentGrade
+                    {
+                        SubmissionId = submissionId,
+                        Score = score,
+                        Feedback = feedback,
+                        GradedById = graderId,
+                        GradedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    TempData["Success"] = "Grade saved successfully!";
+                }
+
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex) { TempData["Error"] = ex.Message; }
 
             return RedirectToAction("Submissions", new { assignmentId });
         }
 
-        // Student: view my assignments
+        // Student: view my assignments with submission status
         public async Task<IActionResult> MyAssignments(long? subjectId = null)
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
 
+            var userId = GetUserId();
             ViewBag.UserRole = GetRole();
             ViewBag.SubjectId = subjectId;
             ViewBag.AssignmentsJson = "[]";
@@ -174,76 +237,155 @@ namespace Learning_Management_System.Controllers
             {
                 try
                 {
-                    var client = CreateClient();
-                    var res = await client.GetAsync($"{BaseUrl}/api/assignment/subject/{subjectId}");
-                    if (res.IsSuccessStatusCode)
-                        ViewBag.AssignmentsJson = await res.Content.ReadAsStringAsync();
+                    var assignments = await _context.Assignments
+                        .Where(a => a.SubjectId == subjectId.Value && !a.IsDeleted)
+                        .OrderBy(a => a.DueDate)
+                        .ToListAsync();
+
+                    var assignmentIds = assignments.Select(a => a.Id).ToList();
+                    var submissions = assignmentIds.Any()
+                        ? await _context.Submissions
+                            .Where(s => s.StudentId == userId && assignmentIds.Contains(s.AssignmentId) && !s.IsDeleted)
+                            .ToListAsync()
+                        : new List<Learning_Management_System.Models.Submission>();
+
+                    var submissionMap = submissions.ToDictionary(s => s.AssignmentId);
+
+                    var data = assignments.Select(a =>
+                    {
+                        var sub = submissionMap.TryGetValue(a.Id, out var s) ? s : null;
+                        return new
+                        {
+                            id = a.Id,
+                            title = a.Title,
+                            description = a.Description,
+                            maxScore = a.MaxScore,
+                            dueDate = a.DueDate,
+                            submitted = sub != null,
+                            submittedAt = sub?.SubmittedAt,
+                            submissionStatus = sub?.Status,
+                            fileUrl = sub?.FileUrl
+                        };
+                    });
+
+                    ViewBag.AssignmentsJson = JsonSerializer.Serialize(data, _jsonOptions);
                 }
                 catch (Exception ex) { ViewBag.Error = ex.Message; }
             }
 
-            try
-            {
-                var client2 = CreateClient();
-                var c = await client2.GetAsync($"{BaseUrl}/api/course?pageSize=100");
-                ViewBag.CoursesJson = c.IsSuccessStatusCode ? await c.Content.ReadAsStringAsync() : "[]";
-            }
-            catch { ViewBag.CoursesJson = "[]"; }
-
+            await LoadCoursesAsync();
             return View();
         }
 
         [HttpPost]
-        public async Task<IActionResult> Submit(long assignmentId, string? fileUrl)
+        public async Task<IActionResult> Submit(long assignmentId, string? fileUrl, long? subjectId)
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
 
             var studentId = GetUserId();
             try
             {
-                var client = CreateClient();
-                var payload = new { assignmentId, studentId, fileUrl };
-                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-                var res = await client.PostAsync($"{BaseUrl}/api/assignment/submission", content);
-                TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
-                    res.IsSuccessStatusCode ? "Assignment submitted!" : "Submission failed.";
+                var assignment = await _context.Assignments.FindAsync(assignmentId);
+                if (assignment == null || assignment.IsDeleted)
+                {
+                    TempData["Error"] = "Assignment not found.";
+                    return RedirectToAction("MyAssignments", new { subjectId });
+                }
+
+                var existing = await _context.Submissions
+                    .FirstOrDefaultAsync(s => s.AssignmentId == assignmentId && s.StudentId == studentId && !s.IsDeleted);
+
+                var isLate = DateTime.UtcNow > assignment.DueDate;
+
+                if (existing != null)
+                {
+                    existing.FileUrl = fileUrl;
+                    existing.SubmittedAt = DateTime.UtcNow;
+                    existing.Status = isLate ? "LATE" : "SUBMITTED";
+                    existing.UpdatedAt = DateTime.UtcNow;
+                    TempData["Success"] = "Assignment re-submitted successfully!";
+                }
+                else
+                {
+                    _context.Submissions.Add(new Learning_Management_System.Models.Submission
+                    {
+                        AssignmentId = assignmentId,
+                        StudentId = studentId,
+                        FileUrl = fileUrl,
+                        Status = isLate ? "LATE" : "SUBMITTED",
+                        SubmittedAt = DateTime.UtcNow,
+                        CreatedAt = DateTime.UtcNow
+                    });
+                    TempData["Success"] = "Assignment submitted successfully!";
+                }
+
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex) { TempData["Error"] = ex.Message; }
 
-            return RedirectToAction("MyAssignments");
+            return RedirectToAction("MyAssignments", new { subjectId });
         }
 
-        // Student: view my grades
+        // Student: view my grades with score, feedback, and graded status
         public async Task<IActionResult> MyGrades(long? subjectId = null)
         {
             if (!IsAuthenticated()) return RedirectToAction("Login", "AuthMvc");
 
             var userId = GetUserId();
             ViewBag.UserRole = GetRole();
+            ViewBag.SubjectId = subjectId;
             ViewBag.GradesJson = "[]";
 
-            // For now, return assignments list with grades available
             if (subjectId.HasValue)
             {
                 try
                 {
-                    var client = CreateClient();
-                    var res = await client.GetAsync($"{BaseUrl}/api/assignment/subject/{subjectId}");
-                    if (res.IsSuccessStatusCode)
-                        ViewBag.AssignmentsJson = await res.Content.ReadAsStringAsync();
+                    var assignments = await _context.Assignments
+                        .Include(a => a.Subject)
+                        .Where(a => a.SubjectId == subjectId.Value && !a.IsDeleted)
+                        .OrderBy(a => a.DueDate)
+                        .ToListAsync();
+
+                    var assignmentIds = assignments.Select(a => a.Id).ToList();
+                    var submissions = assignmentIds.Any()
+                        ? await _context.Submissions
+                            .Include(s => s.Grade).ThenInclude(g => g!.GradedBy)
+                            .Where(s => s.StudentId == userId && assignmentIds.Contains(s.AssignmentId) && !s.IsDeleted)
+                            .ToListAsync()
+                        : new List<Learning_Management_System.Models.Submission>();
+
+                    var submissionMap = submissions.ToDictionary(s => s.AssignmentId);
+
+                    var gradesData = assignments.Select(a =>
+                    {
+                        var sub = submissionMap.TryGetValue(a.Id, out var s) ? s : null;
+                        var grade = sub?.Grade != null && !sub.Grade.IsDeleted ? sub.Grade : null;
+                        return new
+                        {
+                            id = a.Id,
+                            title = a.Title,
+                            description = a.Description,
+                            maxScore = a.MaxScore,
+                            dueDate = a.DueDate,
+                            subjectName = a.Subject?.Name,
+                            submitted = sub != null,
+                            submittedAt = sub?.SubmittedAt,
+                            submissionStatus = sub?.Status,
+                            fileUrl = sub?.FileUrl,
+                            graded = grade != null,
+                            score = grade?.Score,
+                            feedback = grade?.Feedback,
+                            gradedByName = grade?.GradedBy?.FullName ?? grade?.GradedBy?.UserName,
+                            gradedAt = grade?.GradedAt
+                        };
+                    });
+
+                    ViewBag.GradesJson = JsonSerializer.Serialize(gradesData, _jsonOptions);
                 }
-                catch { }
+                catch (Exception ex) { ViewBag.Error = ex.Message; }
             }
 
-            try
-            {
-                var client2 = CreateClient();
-                var c = await client2.GetAsync($"{BaseUrl}/api/course?pageSize=100");
-                ViewBag.CoursesJson = c.IsSuccessStatusCode ? await c.Content.ReadAsStringAsync() : "[]";
-            }
-            catch { ViewBag.CoursesJson = "[]"; }
-
-            ViewBag.SubjectId = subjectId;
+            await LoadCoursesAsync();
             return View();
         }
     }
