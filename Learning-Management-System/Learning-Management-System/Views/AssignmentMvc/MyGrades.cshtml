@@ -1,7 +1,7 @@
 @{
     ViewData["Title"] = "My Grades";
     var coursesJson = ViewBag.CoursesJson as string ?? "[]";
-    var assignmentsJson = ViewBag.AssignmentsJson as string ?? "[]";
+    var gradesJson = ViewBag.GradesJson as string ?? "[]";
     var subjectId = ViewBag.SubjectId;
 }
 
@@ -11,6 +11,15 @@
         <div class="page-sub">View your assignment grades and feedback</div>
     </div>
 </div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="lms-alert success" style="margin-bottom:16px">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="lms-alert danger" style="margin-bottom:16px">@TempData["Error"]</div>
+}
 
 <div class="lms-card" style="margin-bottom:20px">
     <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:flex-end">
@@ -31,7 +40,7 @@
 @section Scripts {
 <script>
     const courses = @Html.Raw(coursesJson);
-    const assignments = @Html.Raw(assignmentsJson);
+    const grades = @Html.Raw(gradesJson);
 
     const courseFilter = document.getElementById('courseFilter');
     courses.forEach(c => {
@@ -60,32 +69,92 @@
         window.location.href = `/AssignmentMvc/MyGrades?subjectId=${subId}`;
     }
 
+    function scoreBar(score, max) {
+        if (score == null || max == null || max === 0) return '';
+        const pct = Math.round((score / max) * 100);
+        const color = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--amber)' : 'var(--rose)';
+        return `<div style="margin-top:6px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:3px">
+                <span>${score} / ${max}</span><span>${pct}%</span>
+            </div>
+            <div style="height:6px;background:var(--bg-muted);border-radius:4px;overflow:hidden">
+                <div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width 0.4s"></div>
+            </div>
+        </div>`;
+    }
+
     const container = document.getElementById('gradesContainer');
-    if (assignments && assignments.length > 0) {
+
+    if (!grades || grades.length === 0) {
+        container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+            <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No assignments found</div>
+            <div style="font-size:13px;color:var(--text-muted)">Select a subject to view your grades</div>
+        </div>`;
+    } else {
+        const rows = grades.map(a => {
+            // Submission status cell
+            let submissionCell;
+            if (!a.submitted) {
+                submissionCell = `<span class="lms-badge" style="background:var(--bg-muted);color:var(--text-muted)">Not Submitted</span>`;
+            } else if (a.submissionStatus === 'LATE') {
+                submissionCell = `<span class="lms-badge" style="background:var(--amber-soft);color:var(--amber)">Late</span>`;
+            } else {
+                submissionCell = `<span class="lms-badge" style="background:var(--green-soft);color:var(--green)">Submitted</span>`;
+            }
+
+            // Grade status cell
+            let gradeCell;
+            if (!a.submitted) {
+                gradeCell = `<span style="color:var(--text-faint);font-size:13px">—</span>`;
+            } else if (!a.graded) {
+                gradeCell = `<span class="lms-badge" style="background:var(--sky-soft);color:var(--sky)">Pending</span>`;
+            } else {
+                gradeCell = `<div>
+                    <div style="font-weight:700;font-size:16px;color:var(--text)">${a.score != null ? a.score : '—'} <span style="font-weight:400;font-size:13px;color:var(--text-muted)">/ ${a.maxScore}</span></div>
+                    ${scoreBar(a.score, a.maxScore)}
+                </div>`;
+            }
+
+            // Feedback cell
+            let feedbackCell;
+            if (!a.graded || (!a.feedback && !a.gradedByName)) {
+                feedbackCell = `<span style="color:var(--text-faint);font-size:13px">—</span>`;
+            } else {
+                feedbackCell = `<div style="font-size:13px">
+                    ${a.feedback ? `<div style="color:var(--text);margin-bottom:4px">"${a.feedback}"</div>` : ''}
+                    ${a.gradedByName ? `<div style="color:var(--text-muted);font-size:12px">— ${a.gradedByName}${a.gradedAt ? ', ' + new Date(a.gradedAt).toLocaleDateString() : ''}</div>` : ''}
+                </div>`;
+            }
+
+            return `<tr>
+                <td>
+                    <div style="font-weight:600;font-size:14px">${a.title}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:2px">Due ${new Date(a.dueDate).toLocaleDateString()}</div>
+                    ${a.submitted && a.fileUrl ? `<a href="${a.fileUrl}" target="_blank" style="font-size:12px;color:var(--sky)">View submission</a>` : ''}
+                </td>
+                <td>${submissionCell}${a.submittedAt ? `<div style="font-size:11.5px;color:var(--text-muted);margin-top:3px">${new Date(a.submittedAt).toLocaleDateString()}</div>` : ''}</td>
+                <td style="text-align:center;font-size:13px;color:var(--text-muted)">${a.maxScore}</td>
+                <td>${gradeCell}</td>
+                <td>${feedbackCell}</td>
+            </tr>`;
+        }).join('');
+
         container.innerHTML = `<div class="lms-card" style="padding:0">
             <div style="overflow-x:auto">
                 <table class="lms-table">
                     <thead>
-                        <tr><th>Assignment</th><th>Due Date</th><th>Max Score</th><th>Status</th><th>Action</th></tr>
-                    </thead>
-                    <tbody>
-                        ${assignments.map(a => `
                         <tr>
-                            <td style="font-weight:600">${a.title}</td>
-                            <td style="font-size:12.5px;color:var(--text-muted)">${new Date(a.dueDate).toLocaleDateString()}</td>
-                            <td>${a.maxScore}</td>
-                            <td><span class="lms-badge" style="background:var(--bg-muted);color:var(--text-muted)">Check submissions</span></td>
-                            <td><a href="/AssignmentMvc/MyAssignments" class="btn-lms-ghost btn-lms-sm">Submit</a></td>
-                        </tr>`).join('')}
-                    </tbody>
+                            <th>Assignment</th>
+                            <th>Submission</th>
+                            <th style="text-align:center">Max</th>
+                            <th>Score</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
                 </table>
             </div>
-        </div>`;
-    } else {
-        container.innerHTML = `<div class="lms-card" style="text-align:center;padding:48px">
-            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.2" style="margin-bottom:12px"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
-            <div style="font-weight:600;color:var(--text-dim);margin-bottom:4px">No grades yet</div>
-            <div style="font-size:13px;color:var(--text-muted)">Select a subject to view your grades</div>
         </div>`;
     }
 </script>

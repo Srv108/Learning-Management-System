@@ -1,3 +1,4 @@
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
@@ -6,16 +7,42 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Learning-Management-System"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Learning-Management-System", "Learning-Management-System\Learning-Management-System\Learning-Management-System.csproj", "{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Learning-Management-System.Tests", "Learning-Management-System.Tests\Learning-Management-System.Tests.csproj", "{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|x64.Build.0 = Debug|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Debug|x86.Build.0 = Debug|Any CPU
 		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|x64.ActiveCfg = Release|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|x64.Build.0 = Release|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|x86.ActiveCfg = Release|Any CPU
+		{171EC8FE-3DB7-EA3A-C760-98CDA9F4F0B7}.Release|x86.Build.0 = Release|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Debug|x64.Build.0 = Debug|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Debug|x86.Build.0 = Debug|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Release|x64.ActiveCfg = Release|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Release|x64.Build.0 = Release|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Release|x86.ActiveCfg = Release|Any CPU
+		{E2CAED22-F909-4BD1-876D-B0E8C3528CB3}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

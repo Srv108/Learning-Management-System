@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -E \"\\\\.\\(cs\\)$\")",
+      "Bash(dotnet build *)",
+      "Bash(dotnet run *)",
+      "Bash(curl -s -X POST http://localhost:5171/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"teacher1@lms.com\",\"password\":\"Password@123\"}')",
+      "Bash(dotnet test *)",
+      "Bash(taskkill /PID 30684 /F)",
+      "Bash(echo \"exit: $?\")"
+    ]
+  }
+}
