@@ -66,6 +66,24 @@ namespace Learning_Management_System.Controllers
             return View();
         }
 
+        [HttpGet]
+        public async Task<IActionResult> EligibleStudents(long examId)
+        {
+            if (!IsAuthenticated()) return Unauthorized();
+
+            try
+            {
+                var client = CreateClient();
+                var res = await client.GetAsync($"{BaseUrl}/api/exam/{examId}/eligible-students");
+                var json = await res.Content.ReadAsStringAsync();
+                return Content(json, "application/json", Encoding.UTF8);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         // Schedule exam
         public async Task<IActionResult> Create()
         {
@@ -161,8 +179,43 @@ namespace Learning_Management_System.Controllers
                 var payload = new { examId, studentId, marks, grade };
                 var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
                 var res = await client.PostAsync($"{BaseUrl}/api/exam/result", content);
-                TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
-                    res.IsSuccessStatusCode ? "Result recorded!" : "Failed to record result.";
+                if (res.IsSuccessStatusCode)
+                {
+                    TempData["Success"] = "Result recorded!";
+                }
+                else
+                {
+                    var raw = await res.Content.ReadAsStringAsync();
+
+                    // Try to show a clean, user-friendly message (especially for enrollment validation)
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(raw);
+                        var root = doc.RootElement;
+                        var message = root.TryGetProperty("message", out var m) ? (m.GetString() ?? string.Empty) : string.Empty;
+                        var courseTitle = root.TryGetProperty("courseTitle", out var c) ? (c.GetString() ?? string.Empty) : string.Empty;
+
+                        if (message.Contains("not enrolled", StringComparison.OrdinalIgnoreCase))
+                        {
+                            var cleanStudent = string.IsNullOrWhiteSpace(studentId) ? "student" : studentId;
+                            TempData["Error"] = string.IsNullOrWhiteSpace(courseTitle)
+                                ? $"{cleanStudent} is not enrolled in this course."
+                                : $"{cleanStudent} is not enrolled in \"{courseTitle}\".";
+                        }
+                        else if (!string.IsNullOrWhiteSpace(message))
+                        {
+                            TempData["Error"] = message;
+                        }
+                        else
+                        {
+                            TempData["Error"] = $"Failed to record result: {raw}";
+                        }
+                    }
+                    catch
+                    {
+                        TempData["Error"] = $"Failed to record result: {raw}";
+                    }
+                }
             }
             catch (Exception ex) { TempData["Error"] = ex.Message; }
 
@@ -224,7 +277,7 @@ namespace Learning_Management_System.Controllers
                 var res = await client.PutAsync($"{BaseUrl}/api/exam/result/{resultId}", content);
 
                 TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
-                    res.IsSuccessStatusCode ? "Result updated!" : "Failed to update result.";
+                    res.IsSuccessStatusCode ? "Result updated!" : $"Failed to update result: {await res.Content.ReadAsStringAsync()}";
             }
             catch (Exception ex) { TempData["Error"] = ex.Message; }
 
@@ -242,7 +295,7 @@ namespace Learning_Management_System.Controllers
                 var client = CreateClient();
                 var res = await client.DeleteAsync($"{BaseUrl}/api/exam/result/{resultId}");
                 TempData[res.IsSuccessStatusCode ? "Success" : "Error"] =
-                    res.IsSuccessStatusCode ? "Result deleted." : "Failed to delete.";
+                    res.IsSuccessStatusCode ? "Result deleted." : $"Failed to delete: {await res.Content.ReadAsStringAsync()}";
             }
             catch (Exception ex) { TempData["Error"] = ex.Message; }
 

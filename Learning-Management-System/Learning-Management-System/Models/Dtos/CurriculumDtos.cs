@@ -319,6 +319,22 @@ public class CreateExamResultDto
     public string Grade { get; set; } = string.Empty;
 }
 
+public class UpdateExamResultDto
+{
+    [Range(0, 1000)]
+    public int? Marks { get; set; }
+
+    [StringLength(10)]
+    public string? Grade { get; set; }
+}
+
+public class EligibleStudentDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+}
+
 public class ExamResultDto
 {
     public long Id { get; set; }
