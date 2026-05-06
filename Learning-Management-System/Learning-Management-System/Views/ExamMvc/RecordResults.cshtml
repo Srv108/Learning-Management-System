@@ -47,8 +47,8 @@
             <form method="post" asp-action="AddResult" style="display:flex;flex-direction:column;gap:14px">
                 <input type="hidden" name="examId" value="@examId" />
                 <div class="lms-form-group">
-                    <label class="lms-label">Student ID <span style="color:var(--rose)">*</span></label>
-                    <input type="text" name="studentId" class="lms-input" required placeholder="Enter student user ID" />
+                    <label class="lms-label">Student <span style="color:var(--rose)">*</span></label>
+                    <input type="text" name="studentId" class="lms-input" required placeholder="Enter student email" />
                 </div>
                 <div class="lms-form-group">
                     <label class="lms-label">Marks <span style="color:var(--rose)">*</span></label>
@@ -57,12 +57,12 @@
                 <div class="lms-form-group">
                     <label class="lms-label">Grade <span style="color:var(--rose)">*</span></label>
                     <select name="grade" class="lms-select" required>
-                        <option value="A+">A+ (90-100)</option>
-                        <option value="A">A (80-89)</option>
-                        <option value="B">B (70-79)</option>
-                        <option value="C">C (60-69)</option>
-                        <option value="D">D (50-59)</option>
-                        <option value="F">F (Below 50)</option>
+                        <option value="A+">A+ </option>
+                        <option value="A">A </option>
+                        <option value="B">B </option>
+                        <option value="C">C </option>
+                        <option value="D">D </option>
+                        <option value="F">F </option>
                     </select>
                 </div>
                 <button type="submit" class="btn-lms-primary" style="width:100%">Record Result</button>
@@ -214,5 +214,6 @@
             });
         });
     }
+
 </script>
 }

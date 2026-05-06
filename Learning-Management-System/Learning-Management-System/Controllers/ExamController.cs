@@ -18,6 +18,48 @@ namespace Learning_Management_System.Controllers
             _dbContext = dbContext;
         }
 
+        [HttpGet("{examId}/eligible-students")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
+        public async Task<IActionResult> GetEligibleStudentsForExam(long examId)
+        {
+            var exam = await _dbContext.Exams
+                .Include(e => e.Subject)
+                .ThenInclude(s => s!.Course)
+                .FirstOrDefaultAsync(e => !e.IsDeleted && e.Id == examId);
+
+            if (exam == null)
+                return NotFound(new { message = "Exam not found" });
+
+            var courseId = exam.Subject?.CourseId;
+            if (courseId == null)
+                return Ok(Array.Empty<EligibleStudentDto>());
+
+            // Students enrolled in any non-deleted batch for the course, whose result for this exam is not yet recorded.
+            // ("Not yet recorded" means no non-deleted ExamResult exists for {examId, studentId}.)
+            var students = await (
+                    from e in _dbContext.Enrollments
+                    join b in _dbContext.CourseBatches on e.BatchId equals b.Id
+                    join u in _dbContext.Users on e.StudentId equals u.Id
+                    where !e.IsDeleted
+                          && !b.IsDeleted
+                          && b.CourseId == courseId
+                          && (e.Status ?? string.Empty).Trim().ToUpper() != "DROPPED"
+                          && !_dbContext.ExamResults.Any(r => !r.IsDeleted && r.ExamId == examId && r.StudentId == u.Id)
+                    select new { u.Id, u.FullName, u.Email }
+                )
+                .Distinct()
+                .OrderBy(x => x.FullName)
+                .Select(x => new EligibleStudentDto
+                {
+                    Id = x.Id,
+                    FullName = x.FullName ?? string.Empty,
+                    Email = x.Email ?? string.Empty
+                })
+                .ToListAsync();
+
+            return Ok(students);
+        }
+
         [HttpGet]
         [Route("subject/{subjectId}")]
         [AllowAnonymous]
@@ -197,6 +239,10 @@ namespace Learning_Management_System.Controllers
                 .Include(r => r.Exam)
                 .Include(r => r.Student)
                 .Include(r => r.GradedBy)
+                // Sort by username/email to match UI expectations like student1/student2 ordering
+                .OrderBy(r => r.Student != null ? (r.Student.UserName ?? r.Student.Email ?? string.Empty) : string.Empty)
+                .ThenBy(r => r.Student != null ? (r.Student.Email ?? string.Empty) : string.Empty)
+                .ThenBy(r => r.StudentId)
                 .Select(r => new ExamResultDto
                 {
                     Id = r.Id,
@@ -260,12 +306,48 @@ namespace Learning_Management_System.Controllers
             if (exam == null)
                 return BadRequest(new { message = "Exam not found" });
 
+            var subject = await _dbContext.Subjects
+                .Include(s => s.Course)
+                .FirstOrDefaultAsync(s => !s.IsDeleted && s.Id == exam.SubjectId);
+            if (subject?.CourseId == null)
+                return BadRequest(new { message = "Exam subject/course not found" });
+
+            // StudentId can be either the user's Id OR their email/username (to support manual entry from UI)
             var student = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == dto.StudentId);
+            if (student == null)
+            {
+                student = await _dbContext.Users.FirstOrDefaultAsync(u => u.Email == dto.StudentId || u.UserName == dto.StudentId);
+            }
             if (student == null)
                 return BadRequest(new { message = "Student not found" });
 
-            var already = await _dbContext.ExamResults.AnyAsync(r => !r.IsDeleted && r.ExamId == dto.ExamId && r.StudentId == dto.StudentId);
-            if (already)
+            var studentId = student.Id;
+
+            // Ensure student is enrolled in the course for this exam
+            var enrolled = await (
+                from e in _dbContext.Enrollments
+                join b in _dbContext.CourseBatches on e.BatchId equals b.Id
+                where !e.IsDeleted
+                      && !b.IsDeleted
+                      && b.CourseId == subject.CourseId
+                      && e.StudentId == studentId
+                      && (e.Status ?? string.Empty).Trim().ToUpper() != "DROPPED"
+                select e.Id
+            ).AnyAsync();
+            if (!enrolled)
+                return BadRequest(new
+                {
+                    message = "Student is not enrolled in this course",
+                    courseId = subject.CourseId,
+                    courseTitle = subject.Course?.Title ?? string.Empty,
+                    student = new { id = studentId, email = student.Email ?? string.Empty, userName = student.UserName ?? string.Empty }
+                });
+
+            // Handle uniqueness constraint (ExamId + StudentId) even with soft-delete.
+            // If a deleted result exists, revive/update it instead of inserting a new row.
+            var existing = await _dbContext.ExamResults
+                .FirstOrDefaultAsync(r => r.ExamId == dto.ExamId && r.StudentId == studentId);
+            if (existing != null && !existing.IsDeleted)
                 return Conflict(new { message = "Result already exists" });
 
             var graderId = User?.Identity?.Name ?? string.Empty;
@@ -273,26 +355,42 @@ namespace Learning_Management_System.Controllers
             if (grader == null)
                 return Unauthorized(new { message = "Invalid grader" });
 
-            var result = new ExamResult
+            if (existing != null)
             {
-                ExamId = dto.ExamId,
-                StudentId = dto.StudentId,
-                Marks = dto.Marks,
-                Grade = dto.Grade,
-                GradedById = grader.Id,
-                CreatedAt = DateTime.UtcNow,
-                IsDeleted = false
-            };
+                existing.IsDeleted = false;
+                existing.Marks = dto.Marks;
+                existing.Grade = dto.Grade;
+                existing.GradedById = grader.Id;
+                existing.UpdatedAt = DateTime.UtcNow;
 
-            _dbContext.ExamResults.Add(result);
-            await _dbContext.SaveChangesAsync();
+                _dbContext.ExamResults.Update(existing);
+                await _dbContext.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetResult), new { id = result.Id }, new { result.Id });
+                return Ok(new { existing.Id });
+            }
+            else
+            {
+                var result = new ExamResult
+                {
+                    ExamId = dto.ExamId,
+                    StudentId = studentId,
+                    Marks = dto.Marks,
+                    Grade = dto.Grade,
+                    GradedById = grader.Id,
+                    CreatedAt = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                _dbContext.ExamResults.Add(result);
+                await _dbContext.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetResult), new { id = result.Id }, new { result.Id });
+            }
         }
 
         [HttpPut("result/{id}")]
         [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
-        public async Task<IActionResult> UpdateResult(long id, [FromBody] CreateExamResultDto dto)
+        public async Task<IActionResult> UpdateResult(long id, [FromBody] UpdateExamResultDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -301,23 +399,13 @@ namespace Learning_Management_System.Controllers
             if (result == null)
                 return NotFound(new { message = "Result not found" });
 
-            var exam = await _dbContext.Exams.FirstOrDefaultAsync(e => !e.IsDeleted && e.Id == dto.ExamId);
-            if (exam == null)
-                return BadRequest(new { message = "Exam not found" });
-
-            var student = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == dto.StudentId);
-            if (student == null)
-                return BadRequest(new { message = "Student not found" });
-
             var graderId = User?.Identity?.Name ?? string.Empty;
             var grader = await _dbContext.Users.FirstOrDefaultAsync(u => u.UserName == graderId);
             if (grader == null)
                 return Unauthorized(new { message = "Invalid grader" });
 
-            result.ExamId = dto.ExamId;
-            result.StudentId = dto.StudentId;
-            result.Marks = dto.Marks;
-            result.Grade = dto.Grade;
+            if (dto.Marks.HasValue) result.Marks = dto.Marks.Value;
+            if (!string.IsNullOrWhiteSpace(dto.Grade)) result.Grade = dto.Grade;
             result.GradedById = grader.Id;
             result.UpdatedAt = DateTime.UtcNow;
 
@@ -328,7 +416,7 @@ namespace Learning_Management_System.Controllers
         }
 
         [HttpDelete("result/{id}")]
-        [Authorize(Roles = "Admin,CourseCoordinator")]
+        [Authorize(Roles = "Admin,CourseCoordinator,Teacher,ExamController")]
         public async Task<IActionResult> DeleteResult(long id)
         {
             var result = await _dbContext.ExamResults.FirstOrDefaultAsync(r => !r.IsDeleted && r.Id == id);
